@@ -746,10 +746,6 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             )
 
 
-            self.send_json(
-                response
-            )
-
 
         # =====================================================
         # ERROR: DIRECTORY NOT FOUND

@@ -1169,12 +1169,18 @@ async function startScan() {
 
 
         updateDashboard(
-            data,
-            duration
-        );
+    data,
+    duration
+);
 
 
-        completeScanModal();
+// Refresh analytics after the scan has been saved.
+// This keeps Security Posture synchronized
+// with the newly completed scan.
+await loadSecurityAnalytics();
+
+
+completeScanModal();
 
 
         console.log(
