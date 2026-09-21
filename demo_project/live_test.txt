@@ -14,7 +14,6 @@ SECURITY FINDING LIVE TEST
 live finding test
 policy decision test
 event ordering test
-AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
 AUTO PROTECT TRIGGER TEST
 # SentinelZero live protection test
 
