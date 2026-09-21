@@ -1,0 +1,2 @@
+# SentinelZero 4D self-action test
+AWS_ACCESS_KEY_ID="[REDACTED_BY_SENTINELZERO]"

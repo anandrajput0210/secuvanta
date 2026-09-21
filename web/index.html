@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SecuVanta | Security Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="logo">🛡</div>
+
+            <div>
+                <h2>SECUVANTA<span></h2>
+                <p>ZERO DEPENDENCY SECURITY</p>
+            </div>
+        </div>
+
+        <nav>
+
+            <a href="#" class="nav-item active">
+                <span>▦</span>
+                Dashboard
+            </a>
+            <a
+    href="#securityScoreSection"
+    class="nav-item"
+>
+    <span>◉</span>
+    Security Score
+</a>
+
+
+<a
+    href="#securityPosture"
+    class="nav-item"
+>
+    <span>◈</span>
+    Security Posture
+</a>
+            <a href="#findings" class="nav-item">
+                <span>◉</span>
+                Findings
+                <span class="badge" id="findingBadge">4</span>
+            </a>
+
+            <a href="#scanner" class="nav-item">
+                <span>⌕</span>
+                Scanner
+            </a>
+
+            <a href="#history" class="nav-item">
+                <span>◷</span>
+                Scan History
+            </a>
+
+            <a href="#about" class="nav-item">
+                <span>ⓘ</span>
+                About
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+
+                <div>
+                    <strong>System Online</strong>
+                    <small>Zero dependencies</small>
+                </div>
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main-content">
+        
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <div>
+
+                <p class="breadcrumb">
+                    SECURITY OPERATIONS / OVERVIEW
+                </p>
+
+                <h1>Security Dashboard</h1>
+
+                <p class="subtitle">
+                    Real-time analysis of sensitive credentials and security risks.
+                </p>
+
+            </div>
+
+
+            <div class="top-actions">
+
+                <div class="time-box">
+                    <span class="pulse"></span>
+                    SCANNER ONLINE
+                </div>
+
+                <button class="scan-button" onclick="startScan()">
+                    <span>⌕</span>
+                    Run Security Scan
+                </button>
+
+            </div>
+
+        </header>
+
+
+<!-- HERO SECURITY STATUS -->
+
+<section class="security-banner">
+
+    <div class="security-left">
+
+        <div class="shield-large">
+            🛡
+        </div>
+
+        <div>
+
+            <p class="section-label">
+                CURRENT SECURITY POSTURE
+            </p>
+
+            <h2 id="riskTitle">
+    ANALYZING SECURITY POSTURE
+</h2>
+            <p id="riskDescription">
+                SecuVanta detected sensitive credentials
+                that require immediate attention.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="risk-circle">
+
+        <div class="risk-number">
+
+            <span id="riskScore">
+    —
+</span>
+
+            <small>/100</small>
+
+        </div>
+
+        <div class="risk-label">
+            RISK SCORE
+        </div>
+
+    </div>
+
+</section>
+<!-- =====================================================
+     LIVE PROTECTION
+===================================================== -->
+
+<section class="live-protection-section">
+
+    <div class="live-protection-header">
+
+        <div>
+            <p class="section-label">
+                LIVE PROTECTION
+            </p>
+
+            <h2>
+                Security Event Stream
+            </h2>
+
+            <p class="live-protection-subtitle">
+                Real-time filesystem security events and
+                protection actions.
+            </p>
+        </div>
+
+
+        <div
+            id="liveProtectionStatus"
+            class="live-protection-status offline"
+        >
+            <span class="live-status-dot"></span>
+
+            <span id="liveProtectionStatusText">
+                OFFLINE
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="live-protection-summary">
+
+        <div class="live-protection-stat">
+
+            <span class="live-stat-label">
+                MODE
+            </span>
+
+            <strong id="liveProtectionMode">
+                —
+            </strong>
+
+        </div>
+
+
+        <div class="live-protection-stat">
+
+            <span class="live-stat-label">
+                INCIDENTS
+            </span>
+
+            <strong id="liveEventCount">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="live-protection-stat">
+
+            <span class="live-stat-label">
+                LAST EVENT
+            </span>
+
+            <strong id="liveLastEvent">
+                —
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="liveEventList"
+        class="live-event-list"
+    >
+
+        <div class="live-event-empty">
+            Waiting for live security events...
+        </div>
+
+    </div>
+
+</section>
+
+<!-- CURRENT SECURITY SUMMARY -->
+
+<section class="stats-grid">
+
+    <!-- ACTIVE FINDINGS -->
+
+    <div class="stat-card critical-card">
+
+        <div class="stat-top">
+
+            <span class="stat-icon">
+                ◉
+            </span>
+
+            <span class="trend danger">
+                ACTIVE
+            </span>
+
+        </div>
+
+        <h3 id="criticalCount">
+            0
+        </h3>
+
+        <p>
+            Critical Findings
+        </p>
+
+        <div class="stat-line critical-line"></div>
+
+    </div>
+
+
+    <!-- HIGH -->
+
+    <div class="stat-card high-card">
+
+        <div class="stat-top">
+
+            <span class="stat-icon">
+                ◉
+            </span>
+
+            <span class="trend warning">
+                ACTIVE
+            </span>
+
+        </div>
+
+        <h3 id="highCount">
+            0
+        </h3>
+
+        <p>
+            High Risk Findings
+        </p>
+
+        <div class="stat-line high-line"></div>
+
+    </div>
+
+
+    <!-- TOTAL FINDINGS -->
+
+    <div class="stat-card medium-card">
+
+        <div class="stat-top">
+
+            <span class="stat-icon">
+                ◉
+            </span>
+
+            <span class="trend neutral">
+                TOTAL
+            </span>
+
+        </div>
+
+        <h3 id="totalFindings">
+            0
+        </h3>
+
+        <p>
+    Active Findings
+</p>
+
+<small
+    id="activeFindingBreakdown"
+    class="stat-breakdown"
+>
+    NO ACTIVE THREATS
+</small>
+
+        <div class="stat-line medium-line"></div>
+
+    </div>
+
+
+    <!-- FILES -->
+
+    <div class="stat-card files-card">
+
+        <div class="stat-top">
+
+            <span class="stat-icon">
+                ◫
+            </span>
+
+            <span class="trend success">
+                SCANNED
+            </span>
+
+        </div>
+
+        <h3 id="filesCount">
+            0
+        </h3>
+
+        <p>
+            Files Analyzed
+        </p>
+
+        <div class="stat-line files-line"></div>
+
+    </div>
+
+</section>
+        <!-- MIDDLE SECTION -->
+
+        <section class="dashboard-grid">
+
+
+            <!-- RISK DISTRIBUTION -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <p class="section-label">
+                            THREAT ANALYSIS
+                        </p>
+
+                        <h2>Risk Distribution</h2>
+
+                    </div>
+
+                    <span class="panel-status">
+                        LIVE DATA
+                    </span>
+
+                </div>
+
+
+                <div class="chart-container">
+
+                    <div class="donut-wrapper">
+
+                        <div class="donut">
+
+                            <div class="donut-center">
+
+    <strong id="donutTotalFindings">
+        0
+    </strong>
+
+    <span>Total Findings</span>
+
+</div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="legend">
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot critical"></span>
+
+                            <span>Critical</span>
+
+                            <strong id="legendCritical">1</strong>
+
+                        </div>
+
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot high"></span>
+
+                            <span>High</span>
+
+                            <strong id="legendHigh">2</strong>
+
+                        </div>
+
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot medium"></span>
+
+                            <span>Medium</span>
+
+                            <strong id="legendMedium">1</strong>
+
+                        </div>
+
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot low"></span>
+
+                            <span>Low</span>
+
+                            <strong id="legendLow">0</strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- SECURITY SCORE -->
+
+            <div
+    class="panel score-panel"
+    id="securityScoreSection"
+>
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <p class="section-label">
+                            SECURITY METRIC
+                        </p>
+
+                        <h2>Security Score</h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="score-content">
+
+                    <div class="score-number">
+
+                        <span id="securityScore">
+                            15
+                        </span>
+
+                        <small>/100</small>
+
+                    </div>
+
+
+                    <div class="progress-track">
+
+                        <div class="progress-fill"
+                             id="securityProgress">
+                        </div>
+
+                    </div>
+
+<div class="score-status">
+
+    <span
+        id="securityScoreStateDot"
+        class="danger-dot"
+    ></span>
+
+    <span id="securityScoreState">
+        AT RISK
+    </span>
+
+</div>
+
+                </div>
+
+
+                <div class="score-info">
+
+                    <div>
+
+                        <span>Last Scan</span>
+
+                        <strong id="lastScan">
+                            Just now
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>Scan Duration</span>
+
+                        <strong id="scanDuration">
+                            0.05s
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+                <!-- ======================================================
+             SECURITY POSTURE
+        ====================================================== -->
+
+        <section class="security-posture-section" id="securityPosture">
+
+            <div class="posture-card">
+
+                <div class="posture-header">
+
+                    <div>
+                        <p class="section-label">
+                            SECURITY INTELLIGENCE
+                        </p>
+
+                        <h2>
+                            Security Posture
+                        </h2>
+
+                        <p class="posture-subtitle">
+                            Overall security health based on current risk
+                            and changes across scans.
+                        </p>
+                    </div>
+
+                    <span
+                        class="posture-badge"
+                        id="postureBadge"
+                    >
+                        NO DATA
+                    </span>
+
+                </div>
+
+
+                <div class="posture-main">
+
+                    <!-- SCORE -->
+
+                    <div class="posture-score">
+
+                        <span id="postureScore">
+                            —
+                        </span>
+
+                        <small>/100</small>
+
+                    </div>
+
+<div class="posture-progress">
+
+    <div class="posture-progress-track">
+
+        <div
+            class="posture-progress-fill"
+            id="postureProgressFill"
+        ></div>
+
+    </div>
+
+</div>
+                    <!-- STATUS -->
+
+                    <div class="posture-status">
+
+                        <strong id="postureState">
+                            NO DATA
+                        </strong>
+
+                        <span id="postureTrend">
+                            —
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- POSTURE METRICS -->
+
+                <div class="posture-metrics">
+
+                    <div class="posture-metric">
+
+                        <strong id="postureNew">
+                            0
+                        </strong>
+
+                        <span>
+                            New
+                        </span>
+
+                    </div>
+
+
+                    <div class="posture-metric">
+
+                        <strong id="posturePersistent">
+                            0
+                        </strong>
+
+                        <span>
+                            Persistent
+                        </span>
+
+                    </div>
+
+
+                    <div class="posture-metric">
+
+                        <strong id="postureReappeared">
+                            0
+                        </strong>
+
+                        <span>
+                            Reappeared
+                        </span>
+
+                    </div>
+
+
+                    <div class="posture-metric">
+
+                        <strong id="postureResolved">
+                            0
+                        </strong>
+
+                        <span>
+                            Resolved
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EXPLANATION -->
+
+                <div class="posture-explanation">
+
+                    <span class="posture-explanation-label">
+                        WHY THIS SCORE
+                    </span>
+
+                    <p id="postureExplanation">
+                        Security posture information will appear
+                        after analytics are loaded.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- FINDINGS -->
+
+        <section class="findings-section" id="findings">
+
+            <div class="section-header">
+
+                <div>
+
+                    <p class="section-label">
+                        SECURITY INTELLIGENCE
+                    </p>
+
+                    <h2>Detected Threats</h2>
+
+                </div>
+
+
+                <div class="filters">
+
+                    <button class="filter active"
+                            onclick="filterFindings('ALL')">
+                        All
+                    </button>
+
+                    <button class="filter"
+                            onclick="filterFindings('CRITICAL')">
+                        Critical
+                    </button>
+
+                    <button class="filter"
+                            onclick="filterFindings('HIGH')">
+                        High
+                    </button>
+
+                    <button class="filter"
+                            onclick="filterFindings('MEDIUM')">
+                        Medium
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="findings-table">
+
+                <div class="table-header">
+
+                    <span>SEVERITY</span>
+
+                    <span>THREAT</span>
+
+                    <span>LOCATION</span>
+
+                    <span>STATUS</span>
+
+                </div>
+
+
+                <div id="findingsList">
+
+                    <!-- JavaScript inserts findings here -->
+
+                </div>
+
+            </div>
+
+        </section>
+        <!-- ======================================================
+     SECURITY CHANGE INTELLIGENCE
+====================================================== -->
+
+<section
+    class="main-change-section"
+    id="changeIntelligence"
+>
+
+    <div class="section-header">
+
+        <div>
+
+            <p class="section-label">
+                SECURITY POSTURE
+            </p>
+
+            <h2>
+                Security Change
+            </h2>
+
+            <p class="main-change-subtitle">
+                How the project's security posture changed
+                since the previous scan.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="mainScanComparison"
+        class="scan-comparison"
+    >
+
+        <div class="comparison-empty">
+
+            <div class="comparison-empty-icon">
+                ↔
+            </div>
+
+            <strong>
+                Scan Comparison
+            </strong>
+
+            <span>
+                Run another scan to compare
+                security posture over time.
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+        <!-- SCANNER -->
+
+        <section class="scanner-section" id="scanner">
+
+            <div class="scanner-card">
+
+                <div>
+
+                    <p class="section-label">
+                        ZERO DEPENDENCY SCANNER
+                    </p>
+
+                    <h2>Scan a Project</h2>
+
+                    <p>
+                        Analyze your source code for exposed credentials,
+                        secrets, tokens and suspicious high-entropy values.
+                    </p>
+
+                </div>
+
+
+                <div class="scan-control">
+
+                    <input
+                        type="text"
+                        id="projectPath"
+                        placeholder="Enter project path..."
+                        value="demo_project"
+                    >
+
+                    <button onclick="startScan()">
+                        Run Scan →
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ======================================================
+             SCAN HISTORY
+        ====================================================== -->
+
+        <section class="scan-history-section" id="history">
+
+            <div class="history-header">
+
+                <div>
+
+                    <div class="section-label">
+                        SECURITY TIMELINE
+                    </div>
+
+                    <h2>
+                        Scan History
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="history-summary">
+
+                <div class="history-stat">
+
+                    <span id="totalScans">
+                        0
+                    </span>
+
+                    <small>
+                        Total Scans
+                    </small>
+
+                </div>
+
+
+                <div class="history-stat">
+
+                    <span id="averageRisk">
+                        0
+                    </span>
+
+                    <small>
+                        Average Risk
+                    </small>
+
+                </div>
+
+
+                <div class="history-stat">
+
+                    <span id="highestRisk">
+                        0
+                    </span>
+
+                    <small>
+                        Highest Risk
+                    </small>
+
+                </div>
+
+
+                <div class="history-stat">
+
+                    <span id="riskTrend">
+                        —
+                    </span>
+
+                    <small>
+                        Risk Trend
+                    </small>
+
+                </div>
+
+
+                <div class="history-stat">
+
+                    <span id="analyticsFindings">
+                        0
+                    </span>
+
+                    <small>
+                        Total Findings
+                    </small>
+
+                </div>
+
+
+                <div class="history-stat latest-risk">
+
+                    <span id="latestHistoryRisk">
+                        0
+                    </span>
+
+                    <small>
+                        Latest Risk
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="history-table-header">
+
+                <span>
+                    SCAN
+                </span>
+
+                <span>
+                    FINDINGS
+                </span>
+
+                <span>
+                    SEVERITY
+                </span>
+
+                <span>
+                    RISK
+                </span>
+
+                <span>
+                    DURATION
+                </span>
+
+                <span></span>
+
+            </div>
+
+
+            <div
+                id="historyList"
+                class="history-list"
+            
+            >
+            </section>
+
+
+        <!-- ======================================================
+             ABOUT
+        ====================================================== -->
+
+        <section class="about-section" id="about">
+
+            <div class="section-label">
+                SECUVANTA
+            </div>
+
+            <h2>About SecuVanta</h2>
+
+            <p class="about-intro">
+                SecuVanta is a full-stack cybersecurity application
+                designed to detect security risks, understand their
+                context, assess risk, and demonstrate automated protection.
+            </p>
+
+            <div class="about-grid">
+
+                <div class="about-card">
+                    <h3>Detection</h3>
+                    <p>
+                        Identifies sensitive credentials and security
+                        findings inside project files.
+                    </p>
+                </div>
+
+                <div class="about-card">
+                    <h3>Risk Intelligence</h3>
+                    <p>
+                        Evaluates severity, confidence, exposure, and
+                        context to calculate security risk.
+                    </p>
+                </div>
+
+                <div class="about-card">
+                    <h3>Live Protection</h3>
+                    <p>
+                        Monitors file changes and can apply
+                        policy-approved automatic protection.
+                    </p>
+                </div>
+
+                <div class="about-card">
+                    <h3>Verification</h3>
+                    <p>
+                        Rescans protected files and verifies that
+                        the security action succeeded.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="about-footer">
+                <span>SecuVanta</span>
+                <span>Context-Aware Security Intelligence</span>
+            </div>
+
+        </section>
+
+
+    </main>
+
+            </div>
+
+        </section>
+    
+    </main>
+
+
+</div>
+
+<div class="modal" id="scanModal">
+
+    <div class="modal-box">
+
+        <div class="scan-animation">
+            🛡
+        </div>
+
+        <h2>Scanning Project</h2>
+
+        <p id="scanMessage">
+            SecuVanta is analyzing your files...
+        </p>
+
+        <div class="scan-progress">
+
+            <div class="scan-progress-bar"
+                 id="scanProgressBar">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+    </section>
+
+</main>
+<!-- =====================================================
+     FINDING DETAILS MODAL
+===================================================== -->
+
+<div id="findingModal" class="finding-modal">
+
+    <div class="finding-modal-backdrop"
+         onclick="closeFindingModal()">
+    </div>
+
+    <div class="finding-modal-content">
+
+        <!-- Header -->
+
+        <div class="finding-modal-header">
+
+            <div>
+
+                <p class="modal-label">
+                    SECURITY FINDING
+                </p>
+
+                <h2 id="modalFindingTitle">
+                    Finding Details
+                </h2>
+
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeFindingModal()"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <!-- Severity -->
+
+        <div class="finding-severity-section">
+
+            <span
+                id="modalSeverity"
+                class="severity-badge"
+            >
+                HIGH
+            </span>
+
+            <span
+                id="modalStatus"
+                class="modal-status"
+            >
+                ● OPEN
+            </span>
+
+        </div>
+
+
+        <!-- Details Grid -->
+
+        <div class="finding-details-grid">
+
+            <div class="detail-card">
+
+                <span class="detail-label">
+                    📁 FILE
+                </span>
+
+                <span
+                    id="modalFile"
+                    class="detail-value"
+                >
+                    —
+                </span>
+
+            </div>
+
+
+            <div class="detail-card">
+
+                <span class="detail-label">
+                    📍 LOCATION
+                </span>
+
+                <span
+                    id="modalLine"
+                    class="detail-value"
+                >
+                    —
+                </span>
+
+            </div>
+
+
+            <div class="detail-card full-width">
+
+                <span class="detail-label">
+                    🔐 DETECTED VALUE
+                </span>
+
+                <code
+                    id="modalValue"
+                    class="secret-value"
+                >
+                    —
+                </code>
+
+            </div>
+
+
+            <div class="detail-card full-width">
+
+                <span class="detail-label">
+                    📝 DESCRIPTION
+                </span>
+
+                <p
+                    id="modalDescription"
+                    class="detail-description"
+                >
+                    —
+                </p>
+
+            </div>
+
+        </div>
+        <!-- =====================================================
+     SECURITY INTELLIGENCE
+===================================================== -->
+
+<div class="security-intelligence">
+
+    <div class="intelligence-header">
+
+        <div>
+
+            <p class="modal-label">
+                SECURITY RISK INTELLIGENCE
+            </p>
+
+            <h3>
+                Security Analysis
+            </h3>
+
+        </div>
+
+    </div>
+
+
+    <div class="intelligence-grid">
+
+    <div class="intelligence-card">
+        <span class="intelligence-label">
+            RISK CONTRIBUTION
+        </span>
+
+        <strong id="modalRiskContribution">—</strong>
+    </div>
+
+
+    <div class="intelligence-card">
+        <span class="intelligence-label">
+            CONFIDENCE
+        </span>
+
+        <strong id="modalConfidence">—</strong>
+
+        <small id="modalConfidenceScore">—</small>
+    </div>
+
+
+    <div class="intelligence-card">
+        <span class="intelligence-label">
+            EXPOSURE
+        </span>
+
+        <strong id="modalExposure">—</strong>
+    </div>
+
+
+    <div class="intelligence-card">
+        <span class="intelligence-label">
+            FALSE POSITIVE RISK
+        </span>
+
+        <strong id="modalFalsePositive">—</strong>
+    </div>
+
+
+    <div class="intelligence-card">
+        <span class="intelligence-label">
+            LIFECYCLE
+        </span>
+
+        <strong id="modalLifecycle">—</strong>
+
+        <small id="modalTimesSeen">—</small>
+    </div>
+
+
+    <div class="intelligence-card">
+        <span class="intelligence-label">
+            VARIABLE
+        </span>
+
+        <strong id="modalVariableName">—</strong>
+
+        <small id="modalExposureScore">—</small>
+    </div>
+
+</div>
+
+    </div>
+            <div class="intelligence-evidence-grid">
+
+            <div class="intelligence-evidence-card">
+
+                <div class="intelligence-evidence-header">
+                    <p class="modal-label">
+                        CONTEXT EVIDENCE
+                    </p>
+
+                    <span id="modalContextCount">
+                        0 signals
+                    </span>
+                </div>
+
+                <ul
+                    id="modalContextReasons"
+                    class="intelligence-reason-list"
+                >
+                    <li>
+                        No context evidence available.
+                    </li>
+                </ul>
+
+            </div>
+
+
+            <div class="intelligence-evidence-card">
+
+                <div class="intelligence-evidence-header">
+                    <p class="modal-label">
+                        WHY THIS RISK?
+                    </p>
+
+                    <span id="modalRiskReasonCount">
+                        0 signals
+                    </span>
+                </div>
+
+                <ul
+                    id="modalRiskReasons"
+                    class="intelligence-reason-list"
+                >
+                    <li>
+                        No risk reasoning available.
+                    </li>
+                </ul>
+
+            </div>
+
+        </div>
+
+</div>
+
+
+        <!-- Remediation -->
+
+        <div class="remediation-section">
+
+            <div class="remediation-header">
+
+                <span class="remediation-icon">
+                    ⚡
+                </span>
+
+                <div>
+
+                    <p class="modal-label">
+                        RECOMMENDED ACTION
+                    </p>
+
+                    <h3>
+                        How to Fix This
+                    </h3>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="modalRemediation"
+                class="remediation-content"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <!-- Footer -->
+
+        <div class="finding-modal-footer">
+
+            <button
+                class="secondary-button"
+                onclick="closeFindingModal()"
+            >
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+<!-- =====================================================
+     SCAN HISTORY DETAILS MODAL
+===================================================== -->
+
+<div
+    id="historyDetailsModal"
+    class="history-details-modal"
+>
+
+    <div class="history-modal-backdrop"></div>
+
+    <div class="history-modal-container">
+
+        <!-- HEADER -->
+
+        <div class="history-modal-header">
+
+            <div>
+
+                <div class="section-label">
+                    HISTORICAL SCAN
+                </div>
+
+                <h2>
+                    Scan Details
+                </h2>
+
+            </div>
+
+            <button
+                id="closeHistoryDetails"
+                class="history-modal-close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <!-- RISK HERO -->
+
+        <div class="history-risk-hero">
+
+            <div>
+
+                <div class="section-label">
+                    SECURITY POSTURE
+                </div>
+
+                <div
+                    id="historyModalRiskLevel"
+                    class="history-risk-level"
+                >
+                    MEDIUM RISK
+                </div>
+
+            </div>
+
+
+            <div class="history-risk-score">
+
+                <span
+                    id="historyModalRiskScore"
+                >
+                    36
+                </span>
+
+                <small>
+                    /100
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- METRICS -->
+
+        <div class="history-metrics-grid">
+
+            <div class="history-metric-card">
+
+                <div class="metric-label">
+                    FINDINGS
+                </div>
+
+                <div
+                    id="historyModalFindings"
+                    class="metric-value"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="history-metric-card">
+
+                <div class="metric-label">
+                    FILES SCANNED
+                </div>
+
+                <div
+                    id="historyModalFiles"
+                    class="metric-value"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="history-metric-card">
+
+                <div class="metric-label">
+                    SCAN DURATION
+                </div>
+
+                <div
+                    id="historyModalDuration"
+                    class="metric-value"
+                >
+                    0s
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- SCAN INFORMATION -->
+
+        <div class="history-info-section">
+
+            <div class="section-label">
+                SCAN INFORMATION
+            </div>
+
+            <div class="history-info-grid">
+
+                <div class="history-info-item">
+
+                    <span>
+                        TARGET
+                    </span>
+
+                    <strong
+                        id="historyModalTarget"
+                    >
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="history-info-item">
+
+                    <span>
+                        SCAN TIME
+                    </span>
+
+                    <strong
+                        id="historyModalTime"
+                    >
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="history-info-item full-width">
+
+                    <span>
+                        SCAN ID
+                    </span>
+
+                    <strong
+                        id="historyModalScanId"
+                        class="scan-id"
+                    >
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- SEVERITY BREAKDOWN -->
+
+        <div class="history-info-section">
+
+            <div class="section-label">
+                SEVERITY BREAKDOWN
+            </div>
+
+
+            <div class="severity-breakdown-grid">
+
+                <div class="severity-stat critical">
+
+                    <span>
+                        CRITICAL
+                    </span>
+
+                    <strong
+                        id="historyCritical"
+                    >
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="severity-stat high">
+
+                    <span>
+                        HIGH
+                    </span>
+
+                    <strong
+                        id="historyHigh"
+                    >
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="severity-stat medium">
+
+                    <span>
+                        MEDIUM
+                    </span>
+
+                    <strong
+                        id="historyMedium"
+                    >
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="severity-stat low">
+
+                    <span>
+                        LOW
+                    </span>
+
+                    <strong
+                        id="historyLow"
+                    >
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+        <!-- =====================================================
+     SCAN COMPARISON
+===================================================== -->
+
+<div class="history-info-section">
+
+    <div class="section-label">
+        SCAN COMPARISON
+    </div>
+
+
+    <div
+        id="scanComparison"
+        class="scan-comparison"
+    >
+
+        <!-- Comparison generated dynamically -->
+
+    </div>
+
+</div>
+        <!-- =====================================================
+     DETECTED SECURITY FINDINGS
+===================================================== -->
+
+<div class="history-info-section">
+
+    <div class="history-findings-header">
+
+        <div>
+
+            <div class="section-label">
+                DETECTED SECURITY FINDINGS
+            </div>
+
+            <div class="history-findings-subtitle">
+                Security issues detected during this scan
+            </div>
+
+        </div>
+
+        <span
+            id="historyFindingsCount"
+            class="history-findings-count"
+        >
+            0 FINDINGS
+        </span>
+
+    </div>
+
+
+    <div
+        id="historyFindingsList"
+        class="history-findings-list"
+    >
+
+        <!-- Findings inserted dynamically -->
+
+    </div>
+
+</div>
+
+
+        <!-- ACTION -->
+
+        <div class="history-modal-footer">
+
+            <button
+                id="historyModalCloseButton"
+                class="history-close-button"
+            >
+                Close Details
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>

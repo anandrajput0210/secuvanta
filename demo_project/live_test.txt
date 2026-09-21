@@ -1,0 +1,20 @@
+SentinelZero live dashboard test
+another live event
+another live event
+final live dashboard check
+correlation test
+correlation test
+correlation test 2
+fresh event 2026-09-12T11:10:05.3723484+05:30
+correlation test 3
+AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+trigger live security analysis
+live security detection test
+SECURITY FINDING LIVE TEST
+live finding test
+policy decision test
+event ordering test
+AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+AUTO PROTECT TRIGGER TEST
+# SentinelZero live protection test
+

@@ -1,0 +1,9 @@
+# SentinelZero Phase 5D worsening scenario
+
+DATABASE_PASSWORD = "DemoPassword_ChangeMe_2026"
+
+AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+
+GITHUB_TOKEN = "ghp_123456789012345678901234567890123456"
+
+API_SECRET = "demo_secret_change_me_2026"
