@@ -15,7 +15,7 @@ import psycopg
 # Local development:
 #   No DATABASE_URL -> JSON file
 #
-# The public history API remains unchanged.
+# History is project-scoped through project_id.
 # =========================================================
 
 
@@ -30,14 +30,58 @@ DATABASE_URL = os.environ.get(
     ""
 ).strip()
 
-
-# =========================================================
-# STORAGE MODE
-# =========================================================
-
 USE_DATABASE = bool(
     DATABASE_URL
 )
+
+
+# =========================================================
+# PROJECT ID
+# =========================================================
+
+def normalize_project_id(project_id):
+    """
+    Convert a project identifier into a stable comparable value.
+    """
+
+    if project_id is None:
+        return ""
+
+    return str(
+        project_id
+    ).strip().replace(
+        "\\",
+        "/"
+    ).lower().strip("/")
+
+
+def get_project_id(scan):
+    """
+    Get the project identity stored inside a scan.
+
+    Existing scans may not have project_id, so fall back
+    to target for backward compatibility.
+    """
+
+    project_id = scan.get(
+        "project_id"
+    )
+
+    if project_id:
+        return normalize_project_id(
+            project_id
+        )
+
+    target = scan.get(
+        "target"
+    )
+
+    if target:
+        return normalize_project_id(
+            target
+        )
+
+    return ""
 
 
 # =========================================================
@@ -45,11 +89,6 @@ USE_DATABASE = bool(
 # =========================================================
 
 def initialize_json_history():
-
-    """
-    Create the local data directory and history file
-    when PostgreSQL is not being used.
-    """
 
     DATA_DIRECTORY.mkdir(
         exist_ok=True
@@ -69,10 +108,6 @@ def initialize_json_history():
 
 def initialize_database():
 
-    """
-    Create the PostgreSQL history table if it does not exist.
-    """
-
     if not USE_DATABASE:
         return
 
@@ -82,13 +117,70 @@ def initialize_database():
 
         with connection.cursor() as cursor:
 
+            # -------------------------------------------------
+            # CREATE TABLE
+            # -------------------------------------------------
+
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS scan_history (
                     id BIGSERIAL PRIMARY KEY,
                     scan_id TEXT UNIQUE NOT NULL,
+                    project_id TEXT,
                     scan_time TEXT NOT NULL,
                     scan_data JSONB NOT NULL
+                )
+                """
+            )
+
+            # -------------------------------------------------
+            # MIGRATE EXISTING DATABASES
+            # -------------------------------------------------
+
+            cursor.execute(
+                """
+                ALTER TABLE scan_history
+                ADD COLUMN IF NOT EXISTS project_id TEXT
+                """
+            )
+
+            # -------------------------------------------------
+            # BACKFILL PROJECT IDS
+            # -------------------------------------------------
+            #
+            # Existing scans were created before project_id
+            # existed. Recover it from the stored target.
+            # -------------------------------------------------
+
+            cursor.execute(
+                """
+                UPDATE scan_history
+                SET project_id = LOWER(
+                    TRIM(
+                        BOTH '/'
+                        FROM COALESCE(
+                            scan_data->>'project_id',
+                            scan_data->>'target',
+                            ''
+                        )
+                    )
+                )
+                WHERE project_id IS NULL
+                   OR project_id = ''
+                """
+            )
+
+            # -------------------------------------------------
+            # PROJECT INDEX
+            # -------------------------------------------------
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS
+                idx_scan_history_project
+                ON scan_history (
+                    project_id,
+                    id DESC
                 )
                 """
             )
@@ -101,10 +193,6 @@ def initialize_database():
 # =========================================================
 
 def load_json_history():
-
-    """
-    Load history from the local JSON file.
-    """
 
     initialize_json_history()
 
@@ -150,10 +238,6 @@ def load_json_history():
 
 def save_json_history(history):
 
-    """
-    Save complete history to the local JSON file.
-    """
-
     initialize_json_history()
 
     HISTORY_FILE.write_text(
@@ -171,15 +255,29 @@ def save_json_history(history):
 # LOAD HISTORY
 # =========================================================
 
-def load_history():
+def load_history(
+    project_id=None
+):
 
     """
-    Load all previous scan records.
+    Load scan history.
+
+    project_id=None:
+        return all history.
+
+    project_id=<value>:
+        return only that project's history.
+
+    History remains newest first.
     """
 
-    # -----------------------------------------------------
+    normalized_project_id = normalize_project_id(
+        project_id
+    )
+
+    # =====================================================
     # POSTGRESQL
-    # -----------------------------------------------------
+    # =====================================================
 
     if USE_DATABASE:
 
@@ -191,13 +289,29 @@ def load_history():
 
             with connection.cursor() as cursor:
 
-                cursor.execute(
-                    """
-                    SELECT scan_data
-                    FROM scan_history
-                    ORDER BY id DESC
-                    """
-                )
+                if normalized_project_id:
+
+                    cursor.execute(
+                        """
+                        SELECT scan_data
+                        FROM scan_history
+                        WHERE project_id = %s
+                        ORDER BY id DESC
+                        """,
+                        (
+                            normalized_project_id,
+                        )
+                    )
+
+                else:
+
+                    cursor.execute(
+                        """
+                        SELECT scan_data
+                        FROM scan_history
+                        ORDER BY id DESC
+                        """
+                    )
 
                 rows = cursor.fetchall()
 
@@ -242,34 +356,41 @@ def load_history():
 
         return history
 
-
-    # -----------------------------------------------------
+    # =====================================================
     # LOCAL JSON
-    # -----------------------------------------------------
+    # =====================================================
 
-    return load_json_history()
+    history = load_json_history()
+
+    if not normalized_project_id:
+
+        return history
+
+    return [
+        scan
+        for scan in history
+        if get_project_id(scan)
+        == normalized_project_id
+    ]
 
 
 # =========================================================
 # SAVE HISTORY
 # =========================================================
 
-def save_history(history):
+def save_history(
+    history
+):
 
     """
     Save complete history.
 
-    Used by JSON mode.
-    PostgreSQL mode saves individual scans through add_scan().
+    Maintains compatibility with the existing API.
     """
 
     if USE_DATABASE:
 
         initialize_database()
-
-        # Replace the database history with the supplied list.
-        # This is mainly useful for compatibility with clear_history()
-        # and any existing callers.
 
         with psycopg.connect(
             DATABASE_URL
@@ -285,27 +406,38 @@ def save_history(history):
                     history[:100]
                 ):
 
+                    project_id = get_project_id(
+                        scan
+                    )
+
                     cursor.execute(
                         """
                         INSERT INTO scan_history (
                             scan_id,
+                            project_id,
                             scan_time,
                             scan_data
                         )
                         VALUES (
                             %s,
                             %s,
+                            %s,
                             %s::jsonb
                         )
                         ON CONFLICT (scan_id)
                         DO UPDATE SET
-                            scan_time = EXCLUDED.scan_time,
-                            scan_data = EXCLUDED.scan_data
+                            project_id =
+                                EXCLUDED.project_id,
+                            scan_time =
+                                EXCLUDED.scan_time,
+                            scan_data =
+                                EXCLUDED.scan_data
                         """,
                         (
                             scan.get(
                                 "scan_id"
                             ),
+                            project_id,
                             scan.get(
                                 "scan_time",
                                 ""
@@ -320,9 +452,6 @@ def save_history(history):
 
         return
 
-
-    # Local JSON mode
-
     save_json_history(
         history
     )
@@ -332,18 +461,28 @@ def save_history(history):
 # ADD SCAN
 # =========================================================
 
-def add_scan(scan):
+def add_scan(
+    scan
+):
 
     """
     Add a new scan to history.
 
-    Newest scans remain first.
-    Maximum history size is 100.
+    The project_id is automatically derived from
+    scan["project_id"] or scan["target"].
     """
 
-    # -----------------------------------------------------
+    project_id = get_project_id(
+        scan
+    )
+
+    # Add project_id to the stored scan itself.
+
+    scan["project_id"] = project_id
+
+    # =====================================================
     # POSTGRESQL
-    # -----------------------------------------------------
+    # =====================================================
 
     if USE_DATABASE:
 
@@ -359,23 +498,30 @@ def add_scan(scan):
                     """
                     INSERT INTO scan_history (
                         scan_id,
+                        project_id,
                         scan_time,
                         scan_data
                     )
                     VALUES (
                         %s,
                         %s,
+                        %s,
                         %s::jsonb
                     )
                     ON CONFLICT (scan_id)
                     DO UPDATE SET
-                        scan_time = EXCLUDED.scan_time,
-                        scan_data = EXCLUDED.scan_data
+                        project_id =
+                            EXCLUDED.project_id,
+                        scan_time =
+                            EXCLUDED.scan_time,
+                        scan_data =
+                            EXCLUDED.scan_data
                     """,
                     (
                         scan.get(
                             "scan_id"
                         ),
+                        project_id,
                         scan.get(
                             "scan_time",
                             ""
@@ -386,71 +532,102 @@ def add_scan(scan):
                     )
                 )
 
-                # Keep only the latest 100 scans.
+                # -------------------------------------------------
+                # Keep maximum 100 scans PER PROJECT
+                # -------------------------------------------------
 
                 cursor.execute(
                     """
                     DELETE FROM scan_history
-                    WHERE id NOT IN (
+                    WHERE id IN (
                         SELECT id
-                        FROM scan_history
-                        ORDER BY id DESC
-                        LIMIT 100
+                        FROM (
+                            SELECT
+                                id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY project_id
+                                    ORDER BY id DESC
+                                ) AS row_number
+                            FROM scan_history
+                            WHERE project_id = %s
+                        ) AS numbered
+                        WHERE row_number > 100
                     )
-                    """
+                    """,
+                    (
+                        project_id,
+                    )
                 )
 
             connection.commit()
 
         return scan
 
-
-    # -----------------------------------------------------
+    # =====================================================
     # LOCAL JSON
-    # -----------------------------------------------------
+    # =====================================================
 
     history = load_json_history()
 
     history.insert(
-        0,
-        scan
-    )
+    0,
+    scan
+)
 
-    history = history[:100]
+# -------------------------------------------------
+# Keep maximum 100 scans PER PROJECT
+# -------------------------------------------------
+
+    project_history = [
+    item
+        for item in history
+        if get_project_id(item) == project_id
+]
+
+    other_history = [
+    item
+        for item in history
+        if get_project_id(item) != project_id
+]
+
+    project_history = project_history[:100]
+
+    history = project_history + other_history
 
     save_json_history(
-        history
-    )
+    history
+)
 
     return scan
-
-
 # =========================================================
 # GET HISTORY
 # =========================================================
 
-def get_history():
+def get_history(
+    project_id=None
+):
 
-    """
-    Return all stored scan history.
-    """
-
-    return load_history()
+    return load_history(
+        project_id
+    )
 
 
 # =========================================================
 # GET SINGLE SCAN
 # =========================================================
 
-def get_scan(scan_id):
+def get_scan(
+    scan_id,
+    project_id=None
+):
 
-    """
-    Find one scan using its scan ID.
-    """
+    normalized_project_id = normalize_project_id(
+        project_id
+    )
 
-    # -----------------------------------------------------
+    # =====================================================
     # POSTGRESQL
-    # -----------------------------------------------------
+    # =====================================================
 
     if USE_DATABASE:
 
@@ -462,17 +639,35 @@ def get_scan(scan_id):
 
             with connection.cursor() as cursor:
 
-                cursor.execute(
-                    """
-                    SELECT scan_data
-                    FROM scan_history
-                    WHERE scan_id = %s
-                    LIMIT 1
-                    """,
-                    (
-                        scan_id,
+                if normalized_project_id:
+
+                    cursor.execute(
+                        """
+                        SELECT scan_data
+                        FROM scan_history
+                        WHERE scan_id = %s
+                          AND project_id = %s
+                        LIMIT 1
+                        """,
+                        (
+                            scan_id,
+                            normalized_project_id,
+                        )
                     )
-                )
+
+                else:
+
+                    cursor.execute(
+                        """
+                        SELECT scan_data
+                        FROM scan_history
+                        WHERE scan_id = %s
+                        LIMIT 1
+                        """,
+                        (
+                            scan_id,
+                        )
+                    )
 
                 row = cursor.fetchone()
 
@@ -513,10 +708,9 @@ def get_scan(scan_id):
 
         return None
 
-
-    # -----------------------------------------------------
+    # =====================================================
     # LOCAL JSON
-    # -----------------------------------------------------
+    # =====================================================
 
     history = load_json_history()
 
@@ -524,9 +718,20 @@ def get_scan(scan_id):
 
         if scan.get(
             "scan_id"
-        ) == scan_id:
+        ) != scan_id:
 
-            return scan
+            continue
+
+        if normalized_project_id:
+
+            if (
+                get_project_id(scan)
+                != normalized_project_id
+            ):
+
+                continue
+
+        return scan
 
     return None
 
@@ -535,15 +740,17 @@ def get_scan(scan_id):
 # CLEAR HISTORY
 # =========================================================
 
-def clear_history():
+def clear_history(
+    project_id=None
+):
 
-    """
-    Remove all scan history.
-    """
+    normalized_project_id = normalize_project_id(
+        project_id
+    )
 
-    # -----------------------------------------------------
+    # =====================================================
     # POSTGRESQL
-    # -----------------------------------------------------
+    # =====================================================
 
     if USE_DATABASE:
 
@@ -555,19 +762,49 @@ def clear_history():
 
             with connection.cursor() as cursor:
 
-                cursor.execute(
-                    "DELETE FROM scan_history"
-                )
+                if normalized_project_id:
+
+                    cursor.execute(
+                        """
+                        DELETE FROM scan_history
+                        WHERE project_id = %s
+                        """,
+                        (
+                            normalized_project_id,
+                        )
+                    )
+
+                else:
+
+                    cursor.execute(
+                        "DELETE FROM scan_history"
+                    )
 
             connection.commit()
 
         return
 
-
-    # -----------------------------------------------------
+    # =====================================================
     # LOCAL JSON
-    # -----------------------------------------------------
+    # =====================================================
+
+    if not normalized_project_id:
+
+        save_json_history(
+            []
+        )
+
+        return
+
+    history = load_json_history()
+
+    remaining_history = [
+        scan
+        for scan in history
+        if get_project_id(scan)
+        != normalized_project_id
+    ]
 
     save_json_history(
-        []
+        remaining_history
     )
