@@ -3,6 +3,7 @@ import uuid
 import json
 import sys
 import threading
+import os
 
 from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -861,13 +862,16 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 # =========================================================
 # START SERVER
 # =========================================================
-
 def run_server():
 
-    host = "127.0.0.1"
+    host = "0.0.0.0"
 
-    port = 8000
-
+    port = int(
+        os.environ.get(
+            "PORT",
+            "8000"
+        )
+    )
 
     server = HTTPServer(
 
