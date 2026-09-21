@@ -1,7 +1,7 @@
 # =========================================================
 # SECUVANTA LIFECYCLE TEST FIXTURE
 # =========================================================
-
+database_password = "DemoPassword2026"
 # Finding 2 — AWS Access Key
 aws_access_key = "AKIA1234567890EXAMPLE"
 
