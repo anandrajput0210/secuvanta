@@ -10,36 +10,66 @@
 
 :root {
 
-    --bg: #090d15;
+    /* =====================================================
+       SECUVANTA PREMIUM CYBER THEME
+    ===================================================== */
 
-    --sidebar: #0c111b;
+    --bg: #080c14;
 
-    --panel: #121925;
+    --sidebar: #0b111c;
 
-    --panel-light: #161f2d;
+    --panel: #111927;
 
-    --border: #263246;
+    --panel-light: #172132;
 
-    --text: #e7edf7;
+    --panel-hover: #1b2638;
 
-    --muted: #8d99ab;
+    --border: #26354a;
 
-    --primary: #536dfe;
+    --border-light: #31425a;
 
-    --primary-light: #7087ff;
+    --text: #edf4ff;
 
+    --text-strong: #ffffff;
+
+    --muted: #91a0b5;
+
+    --muted-light: #aeb9ca;
+
+    /* Primary security blue */
+    --primary: #4f7cff;
+
+    --primary-light: #7297ff;
+
+    --primary-soft: rgba(79, 124, 255, 0.12);
+
+    /* Security severity */
     --critical: #ff4d6d;
 
-    --high: #ff7b5c;
+    --critical-soft: rgba(255, 77, 109, 0.12);
 
-    --medium: #f6c85f;
+    --high: #ff8a5b;
 
-    --low: #57d9a3;
+    --high-soft: rgba(255, 138, 91, 0.12);
 
-    --safe: #57d9a3;
+    --medium: #f5c451;
 
+    --medium-soft: rgba(245, 196, 81, 0.12);
+
+    --low: #45d6a0;
+
+    --low-soft: rgba(69, 214, 160, 0.12);
+
+    --safe: #45d6a0;
+
+    --safe-soft: rgba(69, 214, 160, 0.12);
+
+    /* Visual depth */
     --shadow:
-        0 10px 40px rgba(0, 0, 0, 0.25);
+        0 12px 35px rgba(0, 0, 0, 0.22);
+
+    --shadow-hover:
+        0 18px 45px rgba(0, 0, 0, 0.30);
 
 }
 
@@ -5057,7 +5087,7 @@ button {
 
 .incident-card {
 
-    padding: 16px;
+    padding: 13px;
 
     background:
         linear-gradient(
@@ -5794,9 +5824,9 @@ button {
 
 #liveEventList {
 
-    gap: 10px;
+    gap: 8px;
 
-    max-height: 480px;
+    max-height: 400px;
 
 }
 
@@ -6269,4 +6299,326 @@ button {
 #securityScoreSection,
 #securityPosture {
     scroll-margin-top: 30px;
+}
+/* =====================================================
+   SECUVANTA UI POLISH — PREMIUM CARD SYSTEM
+===================================================== */
+
+/* -----------------------------------------------------
+   GLOBAL PANEL DEPTH
+----------------------------------------------------- */
+
+.panel,
+.findings-section,
+.main-change-section,
+.scanner-card,
+.security-banner {
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.18);
+
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.25s ease;
+
+}
+
+
+/* -----------------------------------------------------
+   PANEL HOVER
+----------------------------------------------------- */
+
+.panel:hover,
+.findings-section:hover,
+.main-change-section:hover {
+
+    border-color:
+        rgba(79, 124, 255, 0.28);
+
+    box-shadow:
+        0 16px 42px rgba(0, 0, 0, 0.24);
+
+}
+
+
+/* -----------------------------------------------------
+   STAT CARDS
+----------------------------------------------------- */
+
+.stat-card {
+
+    position: relative;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            145deg,
+            var(--panel),
+            rgba(23, 33, 50, 0.72)
+        );
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.16);
+
+}
+
+
+.stat-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 2px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            var(--primary),
+            transparent
+        );
+
+    opacity: 0.55;
+
+}
+
+
+.stat-card:hover {
+
+    transform:
+        translateY(-3px);
+
+    border-color:
+        rgba(79, 124, 255, 0.40);
+
+    box-shadow:
+        0 16px 38px rgba(0, 0, 0, 0.26);
+
+}
+
+
+/* -----------------------------------------------------
+   IMPORTANT NUMBERS
+----------------------------------------------------- */
+
+.stat-card h3 {
+
+    color:
+        var(--text-strong);
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        -0.5px;
+
+}
+
+
+/* -----------------------------------------------------
+   PANEL HEADERS
+----------------------------------------------------- */
+
+.panel-header h2,
+.section-header h2 {
+
+    color:
+        var(--text-strong);
+
+    letter-spacing:
+        -0.25px;
+
+}
+
+
+/* -----------------------------------------------------
+   SECURITY POSTURE / HERO
+----------------------------------------------------- */
+
+.security-banner {
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+.security-banner::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 260px;
+    height: 260px;
+
+    right: -100px;
+    top: -120px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(79, 124, 255, 0.12),
+            transparent 70%
+        );
+
+    pointer-events: none;
+
+}
+
+
+/* -----------------------------------------------------
+   SCANNER CARD
+----------------------------------------------------- */
+
+.scanner-card {
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+.scanner-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 320px;
+    height: 320px;
+
+    right: -160px;
+    bottom: -220px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(79, 124, 255, 0.14),
+            transparent 70%
+        );
+
+    pointer-events: none;
+
+}
+
+
+/* -----------------------------------------------------
+   FINDING ROWS
+----------------------------------------------------- */
+
+.finding-row {
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+
+}
+
+
+.finding-row:hover {
+
+    background:
+        rgba(79, 124, 255, 0.045);
+
+}
+
+
+/* -----------------------------------------------------
+   FILTER BUTTONS
+----------------------------------------------------- */
+
+.filter {
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+
+}
+
+
+.filter:hover {
+
+    transform:
+        translateY(-1px);
+
+    border-color:
+        rgba(79, 124, 255, 0.45);
+
+}
+
+
+/* -----------------------------------------------------
+   SEVERITY BADGES
+----------------------------------------------------- */
+
+.severity-badge {
+
+    letter-spacing:
+        0.35px;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+
+}
+
+
+/* -----------------------------------------------------
+   SCAN BUTTON
+----------------------------------------------------- */
+
+.scan-button {
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+.scan-button::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            120deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.16),
+            transparent 70%
+        );
+
+    transform:
+        translateX(-120%);
+
+    transition:
+        transform 0.55s ease;
+
+}
+
+
+.scan-button:hover::after {
+
+    transform:
+        translateX(120%);
+
 }
