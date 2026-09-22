@@ -118,19 +118,40 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             self.run_scan(target)
 
             return
-
-
         # =================================================
-        # SCAN HISTORY API
+        # SECURITY ANALYTICS API
         # =================================================
 
-        if parsed_url.path == "/api/history":
+        if parsed_url.path == "/api/analytics":
 
-            print("HISTORY API CALLED")
+            print("ANALYTICS API CALLED")
+
+            parameters = parse_qs(
+                parsed_url.query
+            )
+
+            project_id = parameters.get(
+                "project",
+                ["demo_project"]
+            )[0]
+
+            history = get_history(
+                project_id
+            )
+
+            analytics = calculate_analytics(
+                history
+            )
+
+            posture = calculate_security_posture(
+                history
+            )
 
             self.send_json({
                 "success": True,
-                "history": get_history()
+                "project_id": project_id,
+                "analytics": analytics,
+                "security_posture": posture
             })
 
             return
@@ -146,33 +167,31 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             })
 
             return
-                        # =================================================
-        # SECURITY ANALYTICS API
+        # =================================================
+        # SCAN HISTORY API
         # =================================================
 
-        if parsed_url.path == "/api/analytics":
+        if parsed_url.path == "/api/history":
 
-            print("ANALYTICS API CALLED")
+            print("HISTORY API CALLED")
 
-            history = get_history()
-
-            analytics = calculate_analytics(
-                history
+            parameters = parse_qs(
+                parsed_url.query
             )
-            posture = calculate_security_posture(
-                history
-            )
+
+            project_id = parameters.get(
+                "project",
+                ["demo_project"]
+            )[0]
 
             self.send_json({
                 "success": True,
-                "analytics": analytics,
-                "security_posture": posture
-            
+                "project_id": project_id,
+                "history": get_history(project_id)
             })
 
             return
-
-        # =================================================
+                # =================================================
         # SINGLE HISTORICAL SCAN API
         # =================================================
 
@@ -186,8 +205,19 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
                 1
             )
 
-            scan = get_scan(scan_id)
+            parameters = parse_qs(
+                parsed_url.query
+            )
 
+            project_id = parameters.get(
+                "project",
+                ["demo_project"]
+            )[0]
+
+            scan = get_scan(
+                scan_id,
+                project_id
+            )
 
             if scan is None:
 
@@ -201,15 +231,13 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 
                 return
 
-
             self.send_json({
                 "success": True,
+                "project_id": project_id,
                 "scan": scan
             })
 
             return
-
-
         # =================================================
         # STATIC WEBSITE
         # =================================================

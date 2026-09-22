@@ -9,6 +9,63 @@ const API_BASE = window.location.origin;
 let currentFindings = [];
 let currentFilter = "ALL";
 // ======================================================
+// SIDEBAR NAVIGATION
+// ======================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const navItems = document.querySelectorAll(".nav-item");
+
+    function updateActiveNav() {
+
+        const currentHash = window.location.hash;
+
+        navItems.forEach((item) => {
+            item.classList.remove("active");
+        });
+
+        if (!currentHash || currentHash === "#") {
+            const dashboardItem =
+                document.querySelector('.nav-item[href="#"]');
+
+            if (dashboardItem) {
+                dashboardItem.classList.add("active");
+            }
+
+            return;
+        }
+
+        const activeItem =
+            document.querySelector(
+                `.nav-item[href="${currentHash}"]`
+            );
+
+        if (activeItem) {
+            activeItem.classList.add("active");
+        }
+    }
+
+    navItems.forEach((item) => {
+
+        item.addEventListener("click", () => {
+
+            setTimeout(() => {
+                updateActiveNav();
+            }, 0);
+
+        });
+
+    });
+
+    window.addEventListener(
+        "hashchange",
+        updateActiveNav
+    );
+
+    updateActiveNav();
+
+});
+// ======================================================
 // SCAN HISTORY
 // ======================================================
 
