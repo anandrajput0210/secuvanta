@@ -52,8 +52,7 @@ def normalize_project_id(project_id):
     ).strip().replace(
         "\\",
         "/"
-    ).lower().strip("/")
-
+    ).strip("/").strip().lower()
 
 def get_project_id(scan):
     """
