@@ -59,14 +59,28 @@ def validate_zip_file(zip_path: Path) -> None:
             total_declared_size = 0
 
             for member in members:
-                member_path = Path(member.filename)
-                if member.filename in seen_names:
-                    raise ValueError(
-                        f"ZIP contains a duplicate entry: "
-                        f"{member.filename}"
-                    )
 
-                seen_names.add(member.filename)
+                member_path = Path(member.filename)
+
+                normalized_name = (
+    member.filename
+    .replace("\\", "/")
+    .split("/")
+)
+
+                normalized_name = "/".join(
+    part.lower()
+            for part in normalized_name
+            if part not in ("", ".")
+)
+
+                if normalized_name in seen_names:
+                    raise ValueError(
+        f"ZIP contains a duplicate entry: "
+        f"{member.filename}"
+    )
+
+                seen_names.add(normalized_name)
                 if member.is_dir():
                     continue
 
