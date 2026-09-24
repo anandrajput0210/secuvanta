@@ -403,7 +403,7 @@ def save_history(
                 )
 
                 for scan in reversed(
-                    history[:100]
+                    history
                 ):
 
                     project_id = get_project_id(
@@ -532,32 +532,7 @@ def add_scan(
                     )
                 )
 
-                # -------------------------------------------------
-                # Keep maximum 100 scans PER PROJECT
-                # -------------------------------------------------
 
-                cursor.execute(
-                    """
-                    DELETE FROM scan_history
-                    WHERE id IN (
-                        SELECT id
-                        FROM (
-                            SELECT
-                                id,
-                                ROW_NUMBER() OVER (
-                                    PARTITION BY project_id
-                                    ORDER BY id DESC
-                                ) AS row_number
-                            FROM scan_history
-                            WHERE project_id = %s
-                        ) AS numbered
-                        WHERE row_number > 100
-                    )
-                    """,
-                    (
-                        project_id,
-                    )
-                )
 
             connection.commit()
 
@@ -590,7 +565,7 @@ def add_scan(
         if get_project_id(item) != project_id
 ]
 
-    project_history = project_history[:100]
+
 
     history = project_history + other_history
 

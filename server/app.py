@@ -138,11 +138,13 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 
             project_id = parameters.get(
                 "project",
-                ["demo_project"]
+                [None]
             )[0]
 
-            history = get_history(
-                project_id
+            history = (
+                get_history(project_id)
+                if project_id
+                else get_history()
             )
 
             analytics = calculate_analytics(
@@ -186,15 +188,21 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             )
 
             project_id = parameters.get(
-                "project",
-                ["demo_project"]
-            )[0]
+    "project",
+    [None]
+)[0]
+
+            history = (
+    get_history(project_id)
+    if project_id
+    else get_history()
+)
 
             self.send_json({
-                "success": True,
-                "project_id": project_id,
-                "history": get_history(project_id)
-            })
+    "success": True,
+    "project_id": project_id,
+    "history": history
+})
 
             return
                 # =================================================
@@ -217,7 +225,7 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 
             project_id = parameters.get(
                 "project",
-                ["demo_project"]
+                [None]
             )[0]
 
             scan = get_scan(

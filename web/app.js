@@ -1078,10 +1078,9 @@ function startLivePolling() {
 // DOM ELEMENTS
 // ======================================================
 
-const scanButton = document.querySelector(".scan-button");
 
-const projectPathInput =
-    document.getElementById("projectPath");
+const projectZipInput =
+    document.getElementById("projectZip");
 
 const riskScoreElement =
     document.getElementById("riskScore");
@@ -1169,15 +1168,62 @@ const modalDescription =
 const modalRemediation =
     document.getElementById("modalRemediation");
 
+
 // ======================================================
-// START SECURITY SCAN
+// UPLOAD PROJECT ZIP
 // ======================================================
 
-async function startScan() {
+async function uploadProject() {
 
-    const projectPath =
-        projectPathInput?.value.trim() ||
-        "demo_project";
+    const file =
+        projectZipInput?.files?.[0];
+
+    if (!file) {
+
+        alert(
+            "Please select a ZIP file first."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !file.name
+            .toLowerCase()
+            .endsWith(".zip")
+    ) {
+
+        alert(
+            "Only ZIP project files are supported."
+        );
+
+        return;
+
+    }
+
+
+    // Backend maximum upload size: 25 MB
+    const maxUploadSize =
+        25 * 1024 * 1024;
+
+    if (file.size > maxUploadSize) {
+
+        alert(
+            "The ZIP file exceeds the 25 MB upload limit."
+        );
+
+        return;
+
+    }
+
+
+    const projectName =
+        file.name
+            .replace(/\.zip$/i, "")
+            .trim() ||
+        "uploaded_project";
 
 
     try {
@@ -1186,12 +1232,24 @@ async function startScan() {
 
         setScanButtonsDisabled(true);
 
-        const startTime = performance.now();
+        const startTime =
+            performance.now();
 
 
-        const response = await fetch(
-            `${API_BASE}/api/scan?path=${encodeURIComponent(projectPath)}`
-        );
+        const response =
+            await fetch(
+                `${API_BASE}/api/upload-project?project=${encodeURIComponent(projectName)}`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/zip"
+                    },
+
+                    body: file
+                }
+            );
 
 
         if (!response.ok) {
@@ -1210,46 +1268,46 @@ async function startScan() {
         if (!data.success) {
 
             throw new Error(
-                data.error || "Scan failed"
+                data.error ||
+                "Project upload failed"
             );
 
         }
 
 
-        const endTime =
-            performance.now();
-
-
         const duration =
-            ((endTime - startTime) / 1000)
-                .toFixed(2);
+            (
+                (performance.now() - startTime)
+                / 1000
+            ).toFixed(2);
 
 
         updateDashboard(
-    data,
-    duration
-);
+            data,
+            duration
+        );
+
+        await loadScanHistory(projectName);
+
+        await loadSecurityAnalytics();
 
 
-// Refresh analytics after the scan has been saved.
-// This keeps Security Posture synchronized
-// with the newly completed scan.
-await loadSecurityAnalytics();
+        completeScanModal();
 
 
-completeScanModal();
+        // Reset the file input after success
+        projectZipInput.value = "";
 
 
         console.log(
-            "SecuVanta scan completed successfully",
+            "SecuVanta project upload completed successfully",
             data
         );
-
 
     } catch (error) {
 
         console.error(
-            "Scan failed:",
+            "Project upload failed:",
             error
         );
 
@@ -1258,10 +1316,9 @@ completeScanModal();
 
 
         alert(
-            "Scan failed: " +
+            "Project upload failed: " +
             error.message
         );
-
 
     } finally {
 
@@ -1270,8 +1327,6 @@ completeScanModal();
     }
 
 }
-
-
 // ======================================================
 // UPDATE DASHBOARD
 // ======================================================
@@ -2155,15 +2210,12 @@ window.addEventListener("DOMContentLoaded", () => {
         "SecuVanta Dashboard Loaded"
     );
 
-    startScan();
-
     loadScanHistory();
 
     loadSecurityAnalytics();
 
     startLivePolling();
 });
-
 // ======================================================
 // FINDING REMEDIATION ENGINE
 // ======================================================
@@ -2660,14 +2712,17 @@ document.addEventListener(
 // LOAD SCAN HISTORY
 // ======================================================
 
-async function loadScanHistory() {
+async function loadScanHistory(projectId = null) {
 
     try {
 
-        const response = await fetch(
-            `${API_BASE}/api/history`
-        );
+        const historyUrl = projectId
+            ? `${API_BASE}/api/history?project=${encodeURIComponent(projectId)}`
+            : `${API_BASE}/api/history`;
 
+        const response = await fetch(
+            historyUrl
+        );
 
         if (!response.ok) {
 
@@ -2694,7 +2749,18 @@ async function loadScanHistory() {
         scanHistory =
             data.history || [];
 
+        if (scanHistory.length > 0) {
+    const latestScan =
+        [...scanHistory].sort(
+            (a, b) =>
+                new Date(b.scan_time) -
+                new Date(a.scan_time)
+        )[0];
 
+    updateRiskTitle(
+        latestScan.risk_level || "SAFE"
+    );
+}
         renderScanHistory(
             scanHistory
         );
@@ -3311,8 +3377,10 @@ function renderScanHistory(history) {
                         <div class="history-project-name">
 
                             ${escapeHtml(
-                                scan.target || "Unknown Project"
-                            )}
+    scan.project_id ||
+    scan.target ||
+    "Unknown Project"
+)}
 
                         </div>
 
@@ -3737,11 +3805,11 @@ function openHistoryDetails(scan) {
 
 
     document.getElementById(
-        "historyModalTarget"
-    ).textContent =
-
-        scan.target || "Unknown";
-
+    "historyModalTarget"
+).textContent =
+    scan.project_id ||
+    scan.target ||
+    "Unknown";
 
     document.getElementById(
         "historyModalScanId"

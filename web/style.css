@@ -1838,7 +1838,94 @@ button {
         var(--primary-light);
 
 }
+.scan-controls {
 
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+    min-width: 360px;
+
+}
+
+
+.scan-upload-control {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+.scan-upload-control input[type="file"] {
+
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 10px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 8px;
+
+    background:
+        #0b111b;
+
+    color:
+        var(--muted);
+
+    font-size: 11px;
+
+}
+
+
+.scan-upload-control button {
+
+    padding: 11px 18px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background:
+        var(--primary);
+
+    color: white;
+
+    font-weight: 700;
+
+    font-size: 11px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s;
+
+}
+
+
+.scan-upload-control button:hover {
+
+    background:
+        var(--primary-light);
+
+}
+
+
+.scan-upload-control button:disabled {
+
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+}
 
 /* ======================================================
    SCAN MODAL
@@ -2172,7 +2259,20 @@ button {
         min-width: 100%;
 
     }
+.scan-controls {
+    min-width: 100%;
+}
 
+
+.scan-upload-control {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+
+.scan-upload-control button {
+    width: 100%;
+}
 
     .filters {
 
@@ -2907,7 +3007,42 @@ button {
 
 }
 
+.history-list {
 
+    max-height: 520px;
+
+    overflow-y: auto;
+
+    padding-right: 6px;
+
+    scrollbar-width: thin;
+
+}
+.history-list::-webkit-scrollbar {
+
+    width: 6px;
+
+}
+
+.history-list::-webkit-scrollbar-track {
+
+    background: transparent;
+
+}
+
+.history-list::-webkit-scrollbar-thumb {
+
+    background: rgba(100, 116, 139, 0.45);
+
+    border-radius: 10px;
+
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+
+    background: rgba(100, 116, 139, 0.7);
+
+}
 .history-item {
 
     display: grid;

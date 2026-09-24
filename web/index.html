@@ -116,10 +116,6 @@
                     SCANNER ONLINE
                 </div>
 
-                <button class="scan-button" onclick="startScan()">
-                    <span>⌕</span>
-                    Run Security Scan
-                </button>
 
             </div>
 
@@ -887,22 +883,27 @@
                     </p>
 
                 </div>
+<div class="scan-controls">
 
+    <div class="scan-upload-control">
 
-                <div class="scan-control">
+        <input
+            type="file"
+            id="projectZip"
+            accept=".zip,application/zip"
+        >
 
-                    <input
-                        type="text"
-                        id="projectPath"
-                        placeholder="Enter project path..."
-                        value="demo_project"
-                    >
+        <button
+            type="button"
+            class="scan-button"
+            onclick="uploadProject()"
+        >
+            Upload ZIP →
+        </button>
 
-                    <button onclick="startScan()">
-                        Run Scan →
-                    </button>
+    </div>
 
-                </div>
+</div>
 
             </div>
 
