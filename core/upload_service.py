@@ -55,12 +55,18 @@ def validate_zip_file(zip_path: Path) -> None:
                 raise ValueError(
                     "ZIP contains too many files."
                 )
-
+            seen_names = set()
             total_declared_size = 0
 
             for member in members:
                 member_path = Path(member.filename)
+                if member.filename in seen_names:
+                    raise ValueError(
+                        f"ZIP contains a duplicate entry: "
+                        f"{member.filename}"
+                    )
 
+                seen_names.add(member.filename)
                 if member.is_dir():
                     continue
 
