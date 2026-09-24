@@ -124,7 +124,6 @@ def mask_secret(value: str) -> str:
         + value[-visible_end:]
     )
 
-
 # =========================================================
 # FINDING CREATION
 # =========================================================
@@ -138,6 +137,7 @@ def create_finding(
     description: str,
     entropy: float | None = None,
     source_line: str = "",
+    fingerprint_file_path: str | None = None,
 ):
     """
     Create a Finding with fingerprint and contextual analysis.
@@ -146,11 +146,22 @@ def create_finding(
     the fingerprint.
 
     The stored Finding receives only the masked value.
+
+    fingerprint_file_path:
+        Optional stable logical path used only for
+        finding identity. When omitted, the real
+        file_path is used exactly as before.
     """
+
+    identity_path = (
+        fingerprint_file_path
+        if fingerprint_file_path is not None
+        else file_path
+    )
 
     fingerprint = generate_fingerprint(
         finding_type=finding_type,
-        file_path=file_path,
+        file_path=identity_path,
         secret_value=secret,
     )
 
@@ -206,7 +217,11 @@ def create_finding(
 # SECRET DETECTION
 # =========================================================
 
-def detect_secrets(text: str, file_path: str):
+def detect_secrets(
+    text: str,
+    file_path: str,
+    fingerprint_file_path: str | None = None,
+):
     """
     Scan text and return security findings.
     """
@@ -233,15 +248,15 @@ def detect_secrets(text: str, file_path: str):
                 secret = match.group()
 
                 finding = create_finding(
-    finding_type=rule["name"],
-    severity=rule["severity"],
-    file_path=file_path,
-    line_number=line_number,
-    secret=secret,
-    description=rule["description"],
-    source_line=line,
-)
-
+                    finding_type=rule["name"],
+                    severity=rule["severity"],
+                    file_path=file_path,
+                    line_number=line_number,
+                    secret=secret,
+                    description=rule["description"],
+                    source_line=line,
+                    fingerprint_file_path=fingerprint_file_path,
+                )
                 findings.append(finding)
 
         # =================================================
@@ -285,18 +300,19 @@ def detect_secrets(text: str, file_path: str):
 
                     findings.append(
                         create_finding(
-    finding_type="High-Entropy Secret",
-    severity="MEDIUM",
-    file_path=file_path,
-    line_number=line_number,
-    secret=value,
-    description=(
-        "Suspicious credential-like value "
-        f"with Shannon entropy {entropy}."
-    ),
-    entropy=entropy,
-    source_line=line,
-)
+                            finding_type="High-Entropy Secret",
+                            severity="MEDIUM",
+                            file_path=file_path,
+                            line_number=line_number,
+                            secret=value,
+                            description=(
+                                "Suspicious credential-like value "
+                                f"with Shannon entropy {entropy}."
+                            ),
+                            entropy=entropy,
+                            source_line=line,
+                            fingerprint_file_path=fingerprint_file_path,
+                        )
                     )
 
         # =================================================
@@ -313,16 +329,17 @@ def detect_secrets(text: str, file_path: str):
 
             findings.append(
                 create_finding(
-    finding_type="Hardcoded Password",
-    severity="HIGH",
-    file_path=file_path,
-    line_number=line_number,
-    secret=secret,
-    description=(
-        "Possible hardcoded password detected."
-    ),
-    source_line=line,
-)
+                    finding_type="Hardcoded Password",
+                    severity="HIGH",
+                    file_path=file_path,
+                    line_number=line_number,
+                    secret=secret,
+                    description=(
+                        "Possible hardcoded password detected."
+                    ),
+                    source_line=line,
+                    fingerprint_file_path=fingerprint_file_path,
+                )
             )
 
     return findings

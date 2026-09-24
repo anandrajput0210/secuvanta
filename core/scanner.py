@@ -97,7 +97,10 @@ def should_ignore(file_path: Path) -> bool:
 # SCAN SINGLE FILE
 # =========================================================
 
-def scan_file(file_path: Path):
+def scan_file(
+    file_path: Path,
+    fingerprint_file_path: str | None = None,
+):
     """
     Scan one file and return:
         findings,
@@ -181,6 +184,7 @@ def scan_file(file_path: Path):
         findings = detect_secrets(
             text,
             str(file_path),
+            fingerprint_file_path,
         )
 
     except Exception as error:
@@ -203,7 +207,10 @@ def scan_file(file_path: Path):
 # SCAN DIRECTORY
 # =========================================================
 
-def scan_directory(directory: str):
+def scan_directory(
+    directory: str,
+    fingerprint_root: str | None = None,
+):
 
     root = Path(directory)
 
@@ -257,11 +264,39 @@ def scan_directory(directory: str):
         if not is_text_file(file_path):
             continue
 
+        logical_file_path = None
+
+        if fingerprint_root is not None:
+
+            fingerprint_root_path = Path(
+                fingerprint_root
+            ).resolve()
+
+            try:
+
+                relative_file = (
+                    file_path.resolve()
+                    .relative_to(
+                        fingerprint_root_path
+                    )
+                )
+
+                logical_file_path = (
+                    relative_file.as_posix()
+                )
+
+            except ValueError:
+
+                logical_file_path = (
+                    file_path.name
+                )
 
         file_findings, status, reason = (
-            scan_file(file_path)
+            scan_file(
+                file_path,
+                logical_file_path,
+            )
         )
-
 
         # -------------------------------------------------
         # SCANNED

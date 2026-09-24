@@ -4,7 +4,7 @@ import json
 import sys
 import threading
 import os
-
+import tempfile
 from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -33,6 +33,7 @@ from core.history import (
     add_scan,
     get_history,
     get_scan,
+    normalize_project_id,
 )
 from core.live_events import (
     get_live_events,
@@ -47,6 +48,11 @@ from core.lifecycle import analyze_lifecycle
 from core.change_engine import calculate_change
 
 from core.live_protection import start_live_protection
+from core.upload_service import (
+    MAX_UPLOAD_SIZE,
+    cleanup_upload,
+    extract_zip_safely,
+)
 # =========================================================
 # SECUVANTA SERVER
 # =========================================================
@@ -245,14 +251,279 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
         print("SERVING STATIC FILE")
 
         return super().do_GET()
+    # =====================================================
+    # HANDLE POST REQUESTS
+    # =====================================================
 
+    def do_POST(self):
+
+        print(f"\nPOST REQUEST RECEIVED: {self.path}")
+
+        parsed_url = urlparse(self.path)
+
+
+        # =================================================
+        # PROJECT UPLOAD API
+        # =================================================
+
+        if parsed_url.path == "/api/upload-project":
+
+            print("PROJECT UPLOAD API CALLED")
+
+            parameters = parse_qs(parsed_url.query)
+
+            project_id = normalize_project_id(
+                parameters.get(
+                    "project",
+                    ["uploaded_project"]
+    )[0]
+)
+
+
+            # -------------------------------------------------
+            # CHECK CONTENT TYPE
+            # -------------------------------------------------
+
+            content_type = self.headers.get(
+                "Content-Type",
+                ""
+            ).lower()
+
+
+            if (
+                "application/zip"
+                not in content_type
+            ):
+
+                self.send_json(
+                    {
+                        "success": False,
+                        "error":
+                            "Only ZIP project uploads are supported."
+                    },
+                    status=400
+                )
+
+                return
+
+
+            # -------------------------------------------------
+            # CHECK CONTENT LENGTH
+            # -------------------------------------------------
+
+            content_length = self.headers.get(
+                "Content-Length"
+            )
+
+
+            if content_length is None:
+
+                self.send_json(
+                    {
+                        "success": False,
+                        "error":
+                            "Content-Length header is required."
+                    },
+                    status=411
+                )
+
+                return
+
+
+            try:
+
+                upload_size = int(
+                    content_length
+                )
+
+            except ValueError:
+
+                self.send_json(
+                    {
+                        "success": False,
+                        "error":
+                            "Invalid Content-Length header."
+                    },
+                    status=400
+                )
+
+                return
+
+
+            if upload_size <= 0:
+
+                self.send_json(
+                    {
+                        "success": False,
+                        "error":
+                            "Uploaded ZIP is empty."
+                    },
+                    status=400
+                )
+
+                return
+
+
+            if upload_size > MAX_UPLOAD_SIZE:
+
+                self.send_json(
+                    {
+                        "success": False,
+                        "error":
+                            "Uploaded ZIP exceeds the maximum allowed size."
+                    },
+                    status=413
+                )
+
+                return
+
+
+            # -------------------------------------------------
+            # SAVE UPLOAD TO TEMPORARY FILE
+            # -------------------------------------------------
+
+            temporary_file = None
+
+            try:
+
+                temporary_file = tempfile.NamedTemporaryFile(
+                    prefix="secuvanta_upload_",
+                    suffix=".zip",
+                    delete=False
+                )
+
+                remaining = upload_size
+
+
+                while remaining > 0:
+
+                    chunk = self.rfile.read(
+                        min(
+                            1024 * 1024,
+                            remaining
+                        )
+                    )
+
+                    if not chunk:
+
+                        raise ValueError(
+                            "Upload ended before the expected size was received."
+                        )
+
+                    temporary_file.write(
+                        chunk
+                    )
+
+                    remaining -= len(
+                        chunk
+                    )
+
+
+                temporary_file.close()
+
+                temporary_zip = Path(
+                    temporary_file.name
+                )
+
+                # -------------------------------------------------
+                # VALIDATE, EXTRACT AND SCAN
+                # -------------------------------------------------
+
+                extracted_project = None
+
+                try:
+
+                    extracted_project = extract_zip_safely(
+                        temporary_zip
+                    )
+
+                    print(
+                        f"UPLOAD WORKSPACE: {extracted_project}"
+                    )
+
+
+                    # -------------------------------------------------
+                    # RUN EXISTING SECUVANTA SCAN PIPELINE
+                    # -------------------------------------------------
+
+                    self.run_scan(
+                        str(extracted_project),
+                        fingerprint_root=str(extracted_project),
+                        project_id=project_id,
+                    )
+                    return
+
+
+                finally:
+
+                    # -------------------------------------------------
+                    # CLEAN TEMPORARY ZIP
+                    # -------------------------------------------------
+
+                    temporary_zip.unlink(
+                        missing_ok=True
+                    )
+
+
+                    # -------------------------------------------------
+                    # CLEAN ISOLATED WORKSPACE
+                    # -------------------------------------------------
+
+                    if extracted_project is not None:
+
+                        cleanup_upload(
+                            extracted_project.parent
+                        )
+            except Exception as error:
+
+                print(
+                    f"UPLOAD ERROR: {error}"
+                )
+
+
+                if temporary_file is not None:
+
+                    try:
+                        temporary_file.close()
+                    except Exception:
+                        pass
+
+
+                if (
+                    temporary_file is not None
+                    and temporary_file.name
+                ):
+
+                    try:
+                        Path(
+                            temporary_file.name
+                        ).unlink(
+                            missing_ok=True
+                        )
+                    except OSError:
+                        pass
+
+
+                self.send_json(
+                    {
+                        "success": False,
+                        "error": str(error)
+                    },
+                    status=400
+                )
+
+                return
 
     # =====================================================
     # RUN SECURITY SCAN
     # =====================================================
 
-    def run_scan(self, target):
-
+    def run_scan(
+        self,
+        target,
+        fingerprint_root=None,
+        project_id=None,
+    ):
         try:
 
             # -------------------------------------------------
@@ -274,27 +545,75 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 
 
             target_path = target_path.resolve()
+
+            project_root = (
+                PROJECT_ROOT.resolve()
+            )
+
+            temporary_root = (
+                Path(
+                    tempfile.gettempdir()
+                ).resolve()
+            )
+
+            is_project_path = True
+
             try:
 
                 target_path.relative_to(
-                    PROJECT_ROOT.resolve()
-    )
+                    project_root
+                )
 
             except ValueError:
 
+                is_project_path = False
+
+
+            is_upload_workspace = False
+
+            if not is_project_path:
+
+                try:
+
+                    upload_parent = (
+                        target_path.parent
+                    )
+
+                    upload_parent.relative_to(
+                        temporary_root
+                    )
+
+                    is_upload_workspace = (
+                        project_id is not None
+                        and fingerprint_root is not None
+                        and upload_parent.name.startswith(
+                        "secuvanta_upload_"
+                        )
+                        and target_path.name == "project"
+                    )
+                except ValueError:
+
+                    is_upload_workspace = False
+
+
+            if not (
+                is_project_path
+                or is_upload_workspace
+            ):
+
                 raise PermissionError(
-        "Scanning directories outside the SecuVanta project is not allowed."
-    )
-
-
-
+                    "Scanning directories outside "
+                    "SecuVanta project or isolated "
+                    "upload workspaces is not allowed."
+                )
             # -------------------------------------------------
             # RUN SCANNER
             # -------------------------------------------------
 
             scan_result = scan_directory(
-                str(target_path)
-)
+                str(target_path),
+                fingerprint_root=fingerprint_root,
+            )
 
             findings = scan_result["findings"]
 
@@ -441,14 +760,27 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 
             previous_scan = None
 
-            # Find the most recent scan of the SAME target.
-            for historical_scan in history:
 
-                historical_target = historical_scan.get(
-                    "target_resolved"
+            def is_same_history_project(historical_scan):
+
+                if project_id:
+                    return (
+                        historical_scan.get("project_id")
+                        == project_id
+                    )
+
+                return (
+                    historical_scan.get("target_resolved")
+                    == current_target
                 )
 
-                if historical_target == current_target:
+
+# Find the most recent scan of the SAME project.
+            for historical_scan in history:
+
+                if is_same_history_project(
+                    historical_scan
+                ):
                     previous_scan = historical_scan
                     break
 
@@ -471,10 +803,15 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             # in an earlier scan and has just returned now.
             historical_state = {}
 
+
             for historical_scan in history:
 
-                if historical_scan.get("target_resolved") != current_target:
-                    continue
+                if project_id:
+                    if historical_scan.get("project_id") != project_id:
+                        continue
+                else:
+                    if historical_scan.get("target_resolved") != current_target:
+                        continue
 
                 historical_findings = historical_scan.get(
                     "findings",
@@ -584,6 +921,8 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
 
                 "target":
                     str(target),
+                "project_id":
+                    project_id,
 
                 "target_resolved":
                     str(target_path),
