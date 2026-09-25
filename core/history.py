@@ -2,7 +2,10 @@ import json
 import os
 from pathlib import Path
 
-import psycopg
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
 
 
 # =========================================================
