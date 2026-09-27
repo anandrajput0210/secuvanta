@@ -36,6 +36,17 @@ When `DATABASE_URL` is not configured, local development uses:
 
 `data/scan_history.json`
 
+## Local PostgreSQL / Neon Setup
+
+For local development, SecuVanta can use a PostgreSQL database such as Neon.
+
+Set the `DATABASE_URL` environment variable to the PostgreSQL connection string before starting the server.
+
+PowerShell:
+
+```powershell
+$env:DATABASE_URL = "your-postgresql-connection-string"
+python server/app.py
 ## Dependency
 
 The production database driver is:
