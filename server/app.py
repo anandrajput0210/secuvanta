@@ -1019,20 +1019,10 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             # SAVE SCAN TO HISTORY
             # =================================================
 
-            db_started = time.perf_counter()
 
             add_scan(
                 history_record
             )
-
-            print(
-                "DB_WRITE_SECONDS:",
-                round(
-                    time.perf_counter() - db_started,
-                    3
-                )
-            )
-
             # =================================================
             # BUILD API RESPONSE
             # =================================================
