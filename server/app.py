@@ -925,7 +925,7 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
                     scan_id,
 
                 "scan_time":
-                    datetime.now().isoformat(),
+                    datetime.now().astimezone().isoformat(),
 
                 "target":
                     str(target),
