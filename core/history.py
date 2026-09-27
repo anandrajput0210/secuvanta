@@ -36,7 +36,7 @@ DATABASE_URL = os.environ.get(
 USE_DATABASE = bool(
     DATABASE_URL
 )
-
+DATABASE_INITIALIZED = False
 
 # =========================================================
 # PROJECT ID
@@ -110,9 +110,14 @@ def initialize_json_history():
 
 def initialize_database():
 
+    global DATABASE_INITIALIZED
+
     if not USE_DATABASE:
         return
 
+    if DATABASE_INITIALIZED:
+        return
+    
     with psycopg.connect(
         DATABASE_URL
     ) as connection:
@@ -188,6 +193,8 @@ def initialize_database():
             )
 
         connection.commit()
+
+        DATABASE_INITIALIZED = True
 
 
 # =========================================================
