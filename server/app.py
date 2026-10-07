@@ -28,6 +28,7 @@ sys.path.insert(
 # =========================================================
 
 from core.scanner import scan_directory
+from core.dependency_scanner import scan_dependencies
 
 from core.history import (
     add_scan,

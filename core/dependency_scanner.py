@@ -192,7 +192,90 @@ def parse_manifest(
 
     return []
 
+# =========================================================
+# PACKAGE-LOCK.JSON
+# =========================================================
 
+def parse_package_lock(
+    file_path: Path,
+):
+    """
+    Extract locked npm package versions from
+    package-lock.json.
+
+    Supports npm lockfile versions that contain:
+
+        "packages": {
+            "node_modules/<package>": {
+                "version": "..."
+            }
+        }
+    """
+
+    dependencies = []
+
+    try:
+        data = json.loads(
+            file_path.read_text(
+                encoding="utf-8"
+            )
+        )
+
+    except (
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+    ):
+        return dependencies
+
+    packages = data.get(
+        "packages",
+        {}
+    )
+
+    if not isinstance(
+        packages,
+        dict,
+    ):
+        return dependencies
+
+    for package_path, package_info in packages.items():
+
+        if not package_path.startswith(
+            "node_modules/"
+        ):
+            continue
+
+        if not isinstance(
+            package_info,
+            dict,
+        ):
+            continue
+
+        version = package_info.get(
+            "version"
+        )
+
+        if not version:
+            continue
+
+        package_name = package_path[
+            len("node_modules/"):
+        ]
+
+        dependencies.append(
+            {
+                "name": package_name,
+                "version": str(version),
+                "version_specifier": f"=={version}",
+                "resolution_status": "exact",
+                "ecosystem": "npm",
+                "manifest": str(file_path),
+                "line_number": 0,
+            }
+        )
+
+    return dependencies
 # =========================================================
 # DEPENDENCY DISCOVERY
 # =========================================================
