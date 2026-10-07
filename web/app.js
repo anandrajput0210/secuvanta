@@ -2264,8 +2264,13 @@ function getRemediation(findingType) {
 
         "High-Entropy Secret":
             "Review this value to determine whether it is a credential, token, or API key. " +
-            "If sensitive, remove it from source control and store it securely."
+            "If sensitive, remove it from source control and store it securely.",
 
+
+        "DEPENDENCY_VULNERABILITY":
+            "Upgrade the affected dependency to a fixed version listed in the finding. " +
+            "Review the dependency's security advisory and changelog, update the lockfile " +
+            "if applicable, and run SecuVanta again to verify that the vulnerability is resolved.",
     };
 
 
