@@ -618,13 +618,25 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             # -------------------------------------------------
             # RUN SCANNER
             # -------------------------------------------------
-
             scan_result = scan_directory(
                 str(target_path),
                 fingerprint_root=fingerprint_root,
             )
 
             findings = scan_result["findings"]
+
+            # -------------------------------------------------
+            # DEPENDENCY VULNERABILITY SCAN
+            # -------------------------------------------------
+
+            dependency_result = scan_dependencies(
+                str(target_path),
+                fingerprint_root=fingerprint_root,
+            )
+
+            findings.extend(
+                dependency_result["findings"]
+            )
 
             files_scanned = scan_result["files_scanned"]
 
@@ -635,8 +647,6 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
             skipped_files = scan_result["skipped_files"]
 
             failed_files = scan_result["failed_files"]
-
-
             # -------------------------------------------------
             # BUILD SEVERITY SUMMARY
             # -------------------------------------------------

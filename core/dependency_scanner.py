@@ -687,6 +687,7 @@ def normalize_osv_vulnerability(
 
 def scan_dependencies(
     project_root: str,
+    fingerprint_root: str | None = None,
 ):
     """
     Discover project dependencies and query OSV for
@@ -695,6 +696,11 @@ def scan_dependencies(
     Unresolved dependencies are preserved and reported
     separately rather than silently ignored.
     """
+    identity_root = Path(
+        fingerprint_root
+        if fingerprint_root is not None
+        else project_root
+    ).resolve()
 
     dependencies = discover_dependencies(
         project_root
@@ -747,6 +753,7 @@ def scan_dependencies(
 
         for vulnerability in normalized_vulnerabilities:
 
+
             manifest_path = Path(
                 dependency["manifest"]
             )
@@ -754,11 +761,10 @@ def scan_dependencies(
             try:
                 logical_manifest = (
                     manifest_path.resolve()
-                    .relative_to(
-                        Path(project_root).resolve()
-                    )
+                    .relative_to(identity_root)
                     .as_posix()
                 )
+
             except ValueError:
                 logical_manifest = (
                     manifest_path.name
