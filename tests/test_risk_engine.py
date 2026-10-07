@@ -31,6 +31,31 @@ def create_finding(
 
 
 class TestRiskEngine(unittest.TestCase):
+    def test_dependency_vulnerability_finding(self):
+
+        finding = Finding(
+            finding_type="DEPENDENCY_VULNERABILITY",
+            severity="MEDIUM",
+            file_path="requirements.txt",
+            line_number=1,
+            value="jinja2@3.1.4 [CVE-2025-27516]",
+            description="Known OSV vulnerability",
+            context_reasons=[],
+        )
+
+        analysis = calculate_finding_risk(
+            finding
+        )
+
+        self.assertEqual(
+            analysis["confidence"],
+            "LOW"
+        )
+
+        self.assertEqual(
+            analysis["false_positive_risk"],
+            "HIGH"
+        )
 
     def test_no_findings(self):
 
