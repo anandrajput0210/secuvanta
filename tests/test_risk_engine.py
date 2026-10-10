@@ -49,13 +49,13 @@ class TestRiskEngine(unittest.TestCase):
 
         self.assertEqual(
             analysis["confidence"],
-            "LOW"
-        )
+            "HIGH"
+)
 
         self.assertEqual(
             analysis["false_positive_risk"],
-            "HIGH"
-        )
+            "LOW"
+)
 
     def test_no_findings(self):
 

@@ -77,6 +77,8 @@ def calculate_confidence(finding: Finding) -> str:
     """
 
     finding_type = finding.finding_type.lower()
+    if "dependency_vulnerability" in finding_type:
+        return "HIGH"
 
     score = 0
 
@@ -229,6 +231,8 @@ def calculate_false_positive_risk(
     """
 
     finding_type = finding.finding_type.lower()
+    if "dependency_vulnerability" in finding_type:
+        return "LOW"
 
     confidence_points = 0
 
