@@ -15,7 +15,7 @@ SUPPORTED_MANIFESTS = {
     "package-lock.json",
 }
 
-
+MAX_DEPENDENCY_MANIFEST_SIZE = 5 * 1024 * 1024
 # =========================================================
 # IGNORED DIRECTORIES
 # =========================================================
@@ -65,7 +65,11 @@ def parse_requirements(
     """
 
     dependencies = []
-
+    try:
+        if file_path.stat().st_size > MAX_DEPENDENCY_MANIFEST_SIZE:
+            return dependencies
+    except OSError:
+        return dependencies
     try:
         lines = file_path.read_text(
             encoding="utf-8"
@@ -171,118 +175,110 @@ def parse_requirements(
 # SINGLE MANIFEST DISPATCH
 # =========================================================
 
+
 def parse_manifest(
     file_path: Path,
+    metadata: dict | None = None,
 ):
-    """
-    Parse one supported dependency manifest.
-    """
+    """Parse one supported dependency manifest."""
 
     filename = file_path.name.lower()
 
     if filename == "requirements.txt":
-        return parse_requirements(
-            file_path
-        )
+        return parse_requirements(file_path)
 
     if filename == "package-lock.json":
         return parse_package_lock(
-            file_path
+            file_path,
+            metadata=metadata,
         )
 
     return []
+
 
 # =========================================================
 # PACKAGE-LOCK.JSON
 # =========================================================
 
+
 def parse_package_lock(
     file_path: Path,
+    metadata: dict | None = None,
 ):
-    """
-    Extract locked npm package versions from
-    package-lock.json.
-
-    Supports npm lockfile versions that contain:
-
-        "packages": {
-            "node_modules/<package>": {
-                "version": "..."
-            }
-        }
-    """
+    """Extract locked npm package versions from package-lock.json."""
 
     dependencies = []
 
-    try:
-        data = json.loads(
-            file_path.read_text(
-                encoding="utf-8"
+    def mark_incomplete(reason: str) -> None:
+        if metadata is not None:
+            metadata.setdefault("incomplete_reasons", [])
+            metadata.setdefault("skipped_manifests", 0)
+            metadata["skipped_manifests"] += 1
+            metadata["incomplete_reasons"].append(
+                f"{reason}: {file_path.name}"
             )
-        )
 
-    except (
-        OSError,
-        UnicodeDecodeError,
-        json.JSONDecodeError,
-    ):
+    try:
+        if file_path.stat().st_size > MAX_DEPENDENCY_MANIFEST_SIZE:
+            mark_incomplete("Manifest exceeds 5 MiB limit")
+            return dependencies
+    except OSError:
+        mark_incomplete("Could not inspect manifest")
         return dependencies
 
-    packages = data.get(
-        "packages",
-        {}
-    )
+    try:
+        data = json.loads(file_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        mark_incomplete("Could not read or parse manifest")
+        return dependencies
 
-    if not isinstance(
-        packages,
-        dict,
-    ):
+    if not isinstance(data, dict):
+        mark_incomplete("Invalid manifest structure")
+        return dependencies
+
+    packages = data.get("packages", {})
+
+    if not isinstance(packages, dict):
+        mark_incomplete("Invalid packages structure")
         return dependencies
 
     for package_path, package_info in packages.items():
-
-        if not package_path.startswith(
-            "node_modules/"
-        ):
+        if not isinstance(package_path, str):
             continue
 
-        if not isinstance(
-            package_info,
-            dict,
-        ):
+        if not package_path.startswith("node_modules/"):
             continue
 
-        version = package_info.get(
-            "version"
-        )
+        if not isinstance(package_info, dict):
+            continue
 
+        version = package_info.get("version")
         if not version:
             continue
 
-        package_name = package_path[
-            len("node_modules/"):
-        ]
+        package_name = package_path[len("node_modules/"):]
 
-        dependencies.append(
-            {
-                "name": package_name,
-                "version": str(version),
-                "version_specifier": f"=={version}",
-                "resolution_status": "exact",
-                "ecosystem": "npm",
-                "manifest": str(file_path),
-                "line_number": 0,
-            }
-        )
+        dependencies.append({
+            "name": package_name,
+            "version": str(version),
+            "version_specifier": f"=={version}",
+            "resolution_status": "exact",
+            "ecosystem": "npm",
+            "manifest": str(file_path),
+            "line_number": 0,
+        })
 
     return dependencies
+
 # =========================================================
 # DEPENDENCY DISCOVERY
 # =========================================================
 
 def discover_dependencies(
     project_root: str,
+    metadata: dict | None = None,
 ):
+
     """
     Recursively discover supported dependency manifests.
 
@@ -303,6 +299,10 @@ def discover_dependencies(
 
     dependencies = []
 
+    if metadata is not None:
+        metadata.setdefault("incomplete_reasons", [])
+        metadata.setdefault("skipped_manifests", 0)
+
     for file_path in root.rglob("*"):
 
         if not file_path.is_file():
@@ -320,7 +320,23 @@ def discover_dependencies(
             not in SUPPORTED_MANIFESTS
         ):
             continue
+        try:
+            manifest_size = file_path.stat().st_size
+        except OSError:
+            if metadata is not None:
+                metadata["skipped_manifests"] += 1
+                metadata["incomplete_reasons"].append(
+                    f"Could not inspect manifest: {file_path.name}"
+                )
+            continue
 
+        if manifest_size > MAX_DEPENDENCY_MANIFEST_SIZE:
+            if metadata is not None:
+                metadata["skipped_manifests"] += 1
+                metadata["incomplete_reasons"].append(
+                    f"Manifest exceeds 5 MiB limit: {file_path.name}"
+                )
+            continue
         dependencies.extend(
             parse_manifest(
                 file_path
@@ -389,17 +405,9 @@ def summarize_dependencies(
 OSV_QUERY_URL = "https://api.osv.dev/v1/query"
 
 
-def query_osv_vulnerabilities(
-    dependency,
-):
-    """
-    Query OSV for vulnerabilities affecting an exact
-    dependency version.
 
-    Dependencies without an exact version are returned
-    as VERSION_UNRESOLVED and are not queried.
-    """
-
+def query_osv_vulnerabilities(dependency):
+    """Query OSV for vulnerabilities affecting an exact version."""
     if not dependency.get("version"):
         return {
             "status": "VERSION_UNRESOLVED",
@@ -419,11 +427,10 @@ def query_osv_vulnerabilities(
         "version": dependency["version"],
     }
 
-    try:
-        request_data = json.dumps(
-            payload
-        ).encode("utf-8")
+    max_response_bytes = 5 * 1024 * 1024
 
+    try:
+        request_data = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
             OSV_QUERY_URL,
             data=request_data,
@@ -434,29 +441,36 @@ def query_osv_vulnerabilities(
             method="POST",
         )
 
-        with urllib.request.urlopen(
-            request,
-            timeout=10,
-        ) as response:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            response_body = response.read(max_response_bytes + 1)
 
-            response_body = response.read()
+        if len(response_body) > max_response_bytes:
+            raise ValueError(
+                "OSV response exceeded the 5 MiB size limit."
+            )
 
-        data = json.loads(
-            response_body.decode("utf-8")
-        )
+        data = json.loads(response_body.decode("utf-8"))
 
-        vulnerabilities = data.get(
-            "vulns",
-            [],
-        )
+        if not isinstance(data, dict):
+            raise ValueError("OSV response must be a JSON object.")
+
+        vulnerabilities = data.get("vulns", [])
+
+        if not isinstance(vulnerabilities, list):
+            raise ValueError(
+                "OSV response field 'vulns' must be a list."
+            )
+
+        if not all(isinstance(item, dict) for item in vulnerabilities):
+            raise ValueError(
+                "OSV response contains an invalid vulnerability record."
+            )
 
         return {
             "status": "SUCCESS",
             "dependency": dependency,
             "vulnerabilities": vulnerabilities,
-            "vulnerability_count": len(
-                vulnerabilities
-            ),
+            "vulnerability_count": len(vulnerabilities),
         }
 
     except (
@@ -464,8 +478,10 @@ def query_osv_vulnerabilities(
         urllib.error.URLError,
         TimeoutError,
         json.JSONDecodeError,
+        UnicodeDecodeError,
+        ValueError,
+        OSError,
     ) as exc:
-
         return {
             "status": "ERROR",
             "dependency": dependency,
@@ -702,10 +718,15 @@ def scan_dependencies(
         else project_root
     ).resolve()
 
-    dependencies = discover_dependencies(
-        project_root
-    )
+    discovery_metadata = {
+        "incomplete_reasons": [],
+        "skipped_manifests": 0,
+    }
 
+    dependencies = discover_dependencies(
+        project_root,
+        metadata=discovery_metadata,
+    )
     results = []
 
     findings = []
@@ -847,6 +868,16 @@ def scan_dependencies(
 
             "lookup_errors":
                 lookup_errors,
+
+            "skipped_manifests": discovery_metadata[
+                "skipped_manifests"
+            ],
+            "incomplete_reasons": discovery_metadata[
+                "incomplete_reasons"
+            ],
+            "incomplete": bool(
+                discovery_metadata["incomplete_reasons"]
+            ),
         },
     }
 # =========================================================

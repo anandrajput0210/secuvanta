@@ -16,6 +16,36 @@ from core.dependency_scanner import (
 
 class TestDependencyScanner(unittest.TestCase):
 
+    def test_oversized_requirements_manifest_is_skipped(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "requirements.txt"
+            from core.dependency_scanner import (
+                MAX_DEPENDENCY_MANIFEST_SIZE,
+            )
+
+            path.write_bytes(
+                b"x" * (MAX_DEPENDENCY_MANIFEST_SIZE + 1)
+            )
+
+            dependencies = parse_requirements(path)
+
+            self.assertEqual(dependencies, [])
+
+    def test_oversized_package_lock_manifest_is_skipped(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "package-lock.json"
+            from core.dependency_scanner import (
+                MAX_DEPENDENCY_MANIFEST_SIZE,
+            )
+
+            path.write_bytes(
+                b"x" * (MAX_DEPENDENCY_MANIFEST_SIZE + 1)
+            )
+
+            dependencies = parse_package_lock(path)
+
+            self.assertEqual(dependencies, [])
+
     def test_requirements_parser(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "requirements.txt"
@@ -171,6 +201,29 @@ requests==2.31.0  # duplicate
             result["findings"],
             [],
         )
+
+    def test_oversized_manifest_marks_scan_incomplete(self):
+        from core.dependency_scanner import (
+            MAX_DEPENDENCY_MANIFEST_SIZE,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "requirements.txt"
+
+            manifest.write_bytes(
+                b"x" * (MAX_DEPENDENCY_MANIFEST_SIZE + 1)
+            )
+
+            result = scan_dependencies(str(root))
+
+        summary = result["summary"]
+
+        self.assertEqual(summary["total_dependencies"], 0)
+        self.assertEqual(summary["skipped_manifests"], 1)
+        self.assertTrue(summary["incomplete"])
+        self.assertTrue(summary["incomplete_reasons"])
+
     def test_discover_dependencies(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -1009,6 +1009,9 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
                             or dependency_result.get(
                                 "summary", {}
                             ).get("unresolved_dependencies", 0)
+                            or dependency_result.get(
+                                "summary", {}
+                            ).get("incomplete", False)
                         )
                         else "COMPLETE"
                     ),
