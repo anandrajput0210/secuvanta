@@ -132,6 +132,45 @@ requests==2.31.0  # duplicate
                 names,
             )
 
+
+    @patch(
+        "core.dependency_scanner.query_osv_vulnerabilities"
+    )
+    def test_scan_dependencies_counts_lookup_errors(
+        self,
+        mock_query,
+    ):
+        mock_query.return_value = {
+            "status": "ERROR",
+            "vulnerabilities": [],
+            "vulnerability_count": 0,
+            "error": "OSV service unavailable",
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+
+            (root / "requirements.txt").write_text(
+                "examplepkg==1.0.0\n",
+                encoding="utf-8",
+            )
+
+            result = scan_dependencies(str(root))
+
+        self.assertEqual(
+            result["summary"]["lookup_errors"],
+            1,
+        )
+
+        self.assertEqual(
+            result["results"][0]["status"],
+            "ERROR",
+        )
+
+        self.assertEqual(
+            result["findings"],
+            [],
+        )
     def test_discover_dependencies(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
