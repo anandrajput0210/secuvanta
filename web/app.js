@@ -1410,8 +1410,20 @@ if (activeFindingBreakdown) {
 
     currentFindings =
         data.findings || [];
+    // Dependency Scan Status
 
+    const dependencyScanStatusElement =
+        document.getElementById(
+            "dependencyScanStatus"
+        );
 
+    if (dependencyScanStatusElement) {
+        const dependencyScanStatus =
+            data.dependency_scan?.status || "UNKNOWN";
+
+        dependencyScanStatusElement.textContent =
+            dependencyScanStatus;
+    }
     // --------------------------------------------------
     // Risk Score
     // --------------------------------------------------
