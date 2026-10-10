@@ -992,9 +992,30 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
                 "risk_level":
                     risk_level,
 
+
                 "severity_summary":
                     severity_summary,
+                # =============================================
+                # DEPENDENCY SCAN
+                # =============================================
 
+                "dependency_scan": {
+                    "status": (
+                        "PARTIAL"
+                        if (
+                            dependency_result.get(
+                                "summary", {}
+                            ).get("lookup_errors", 0)
+                            or dependency_result.get(
+                                "summary", {}
+                            ).get("unresolved_dependencies", 0)
+                        )
+                        else "COMPLETE"
+                    ),
+                    "summary": dependency_result.get(
+                        "summary", {}
+                    ),
+                },
                 # =============================================
                 # CURRENT FINDINGS
                 # =============================================
@@ -1063,6 +1084,7 @@ class SecuVantaHandler(SimpleHTTPRequestHandler):
                 "dependency_scan": {
                     "status": (
                         "PARTIAL"
+
                         if (
                             dependency_result.get(
                                 "summary", {}
