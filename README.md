@@ -6,6 +6,8 @@ SecuVanta is a context-aware security intelligence and automated protection syst
 
 - Project ZIP upload and isolated scanning
 - Security finding detection and risk scoring
+- Dependency vulnerability scanning using OSV vulnerability data
+- Dependency scan status reporting and remediation guidance
 - Security posture and risk trend analysis
 - Finding lifecycle tracking
 - Scan history and project-scoped history
@@ -47,17 +49,27 @@ PowerShell:
 ```powershell
 $env:DATABASE_URL = "your-postgresql-connection-string"
 python server/app.py
-## Dependency
+```
+
+## Dependencies
 
 The production database driver is:
 
 `psycopg[binary]>=3.2,<4`
 
+Dependencies are declared in `requirements.txt`. Install them with:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
 ## Running Locally
 
 Start the SecuVanta server from the project root:
 
-`python server/app.py`
+```powershell
+python server/app.py
+```
 
 The server uses port `8000` by default.
 
@@ -80,3 +92,4 @@ secuvanta/
 |-- STDLIB.md
 |-- sentinelzero.py
 `-- test_*.py           # Validation tests
+```
